@@ -155,7 +155,7 @@ class MemeZapBot:
             logger.error(f"Could not save processed tweets: {e}")
     
     def check_mentions(self):
-        """Check for new mentions with enhanced processing"""
+        """Check for new mentions with enhanced processing using search (works with basic API access)"""
         try:
             # Rate limiting check
             current_time = time.time()
@@ -165,31 +165,41 @@ class MemeZapBot:
             self.last_check_time = current_time
             
             try:
-                # Get mentions timeline
-                mentions = self.api_v1.mentions_timeline(
-                    count=20,
-                    include_entities=True,
-                    tweet_mode='extended'
+                # Use search instead of mentions_timeline (works with basic access)
+                # Search for tweets mentioning the bot
+                search_query = f"@{self.bot_username}"
+                
+                # Use Twitter API v2 search instead of mentions_timeline
+                tweets = self.client.search_recent_tweets(
+                    query=search_query,
+                    max_results=20,
+                    tweet_fields=['created_at', 'author_id', 'text', 'attachments', 'referenced_tweets'],
+                    user_fields=['username'],
+                    expansions=['author_id', 'attachments.media_keys'],
+                    media_fields=['url', 'preview_image_url']
                 )
                 
-                if not mentions:
+                if not tweets or not tweets.data:
                     logger.info("No new mentions found")
                     return
                 
-                logger.info(f"📬 Found {len(mentions)} mentions to process")
+                logger.info(f"📬 Found {len(tweets.data)} mentions to process")
                 
-                for tweet in mentions:
+                for tweet in tweets.data:
                     # Skip if already processed
                     if str(tweet.id) in self.processed_tweets:
                         continue
                     
                     # Skip if it's the bot's own tweet
-                    if tweet.user.id == int(self.bot_user_id):
+                    if str(tweet.author_id) == str(self.bot_user_id):
                         continue
                     
+                    # Convert v2 tweet to v1-like structure for compatibility
+                    v1_like_tweet = self.convert_v2_to_v1_format(tweet, tweets.includes)
+                    
                     # Process the mention with enhanced features
-                    logger.info(f"👤 Processing enhanced mention from @{tweet.user.screen_name}")
-                    self.process_enhanced_meme_request(tweet)
+                    logger.info(f"👤 Processing enhanced mention from user {tweet.author_id}")
+                    self.process_enhanced_meme_request(v1_like_tweet)
                         
                     # Mark as processed
                     self.processed_tweets.add(str(tweet.id))
@@ -198,16 +208,62 @@ class MemeZapBot:
                 
             except tweepy.TooManyRequests:
                 logger.warning("⏰ Rate limit hit, waiting...")
-                return
-            except tweepy.Unauthorized:
-                logger.error("❌ Unauthorized - check API credentials")
-                return
-            except Exception as api_error:
-                logger.error(f"API error: {api_error}")
-                return
+                time.sleep(900)  # Wait 15 minutes
+            except tweepy.Forbidden as e:
+                logger.error(f"API access forbidden: {e}")
+                logger.error("This might be due to API access level restrictions.")
+                logger.info("💡 Consider upgrading to Elevated API access for full functionality")
+                time.sleep(300)  # Wait 5 minutes before retrying
+            except Exception as e:
+                logger.error(f"Error checking mentions: {e}")
+                time.sleep(60)  # Wait 1 minute before retrying
                 
         except Exception as e:
-            logger.error(f"Error checking mentions: {e}")
+            logger.error(f"Unexpected error in check_mentions: {e}")
+
+    def convert_v2_to_v1_format(self, v2_tweet, includes):
+        """Convert v2 tweet format to v1-like format for compatibility"""
+        class V1LikeTweet:
+            def __init__(self, v2_tweet, includes):
+                self.id = v2_tweet.id
+                self.full_text = v2_tweet.text
+                self.text = v2_tweet.text
+                self.created_at = v2_tweet.created_at
+                
+                # Find user info from includes
+                self.user = None
+                if includes and 'users' in includes:
+                    for user in includes['users']:
+                        if user.id == v2_tweet.author_id:
+                            self.user = type('User', (), {
+                                'id': user.id,
+                                'screen_name': user.username,
+                                'name': user.name if hasattr(user, 'name') else user.username
+                            })()
+                            break
+                
+                # If user not found in includes, create minimal user object
+                if not self.user:
+                    self.user = type('User', (), {
+                        'id': v2_tweet.author_id,
+                        'screen_name': f'user_{v2_tweet.author_id}',
+                        'name': f'User {v2_tweet.author_id}'
+                    })()
+                
+                # Handle media/attachments
+                self.entities = {'media': []}
+                if hasattr(v2_tweet, 'attachments') and v2_tweet.attachments:
+                    if 'media_keys' in v2_tweet.attachments:
+                        if includes and 'media' in includes:
+                            for media in includes['media']:
+                                if media.media_key in v2_tweet.attachments['media_keys']:
+                                    media_obj = {
+                                        'media_url_https': media.url if hasattr(media, 'url') else None,
+                                        'type': media.type if hasattr(media, 'type') else 'photo'
+                                    }
+                                    self.entities['media'].append(media_obj)
+        
+        return V1LikeTweet(v2_tweet, includes)
     
     def process_enhanced_meme_request(self, tweet):
         """Process a meme request with enhanced AI features"""

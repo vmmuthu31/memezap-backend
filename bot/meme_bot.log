@@ -27,3 +27,52 @@
 453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
 2025-06-04 00:06:32,213 - INFO - 😴 Sleeping for 180 seconds...
 2025-06-04 00:06:42,560 - INFO - 🛑 Bot stopped by user
+2025-07-05 13:31:25,272 - INFO - 🤖 Enhanced MemeZap Bot authenticated as @ForgexMemezap
+2025-07-05 13:31:25,273 - INFO - 🧠 Initializing AI services...
+2025-07-05 13:31:25,300 - INFO - Loaded 100 templates from cache
+2025-07-05 13:31:25,324 - INFO - ✅ AI services initialized
+2025-07-05 13:31:25,931 - INFO - 🎭 Bot Username: @ForgexMemezap
+2025-07-05 13:31:25,932 - INFO - 📝 Enhanced features: Template recognition, Trend analysis, Persona learning
+2025-07-05 13:31:25,932 - INFO - 🚀 Starting Enhanced MemeZap Bot...
+2025-07-05 13:31:25,932 - INFO - 🎯 Listening for mentions of @forgexmemezap
+2025-07-05 13:31:25,932 - INFO - 🔗 MemeZap API: http://127.0.0.1:8000/api/smart_generate
+2025-07-05 13:31:25,932 - INFO - ⏱️ Check interval: 180 seconds
+2025-07-05 13:31:25,932 - INFO - 🧠 AI Features: Template Recognition ✓, Trend Analysis ✓, Persona Learning ✓
+2025-07-05 13:31:25,932 - INFO - 👀 Checking for new mentions with enhanced processing...
+2025-07-05 13:31:26,203 - ERROR - API error: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-07-05 13:31:26,203 - INFO - 😴 Sleeping for 180 seconds...
+2025-07-05 13:32:32,081 - INFO - 🛑 Enhanced bot stopped by user
+2025-07-05 13:33:38,325 - INFO - 🤖 Enhanced MemeZap Bot authenticated as @ForgexMemezap
+2025-07-05 13:33:38,325 - INFO - 🧠 Initializing AI services...
+2025-07-05 13:33:38,351 - INFO - Loaded 100 templates from cache
+2025-07-05 13:33:38,382 - INFO - ✅ AI services initialized
+2025-07-05 13:33:39,039 - INFO - 🎭 Bot Username: @ForgexMemezap
+2025-07-05 13:33:39,039 - INFO - 📝 Enhanced features: Template recognition, Trend analysis, Persona learning
+2025-07-05 13:33:39,039 - INFO - 🚀 Starting Enhanced MemeZap Bot...
+2025-07-05 13:33:39,039 - INFO - 🎯 Listening for mentions of @forgexmemezap
+2025-07-05 13:33:39,039 - INFO - 🔗 MemeZap API: http://127.0.0.1:8000/api/smart_generate
+2025-07-05 13:33:39,039 - INFO - ⏱️ Check interval: 180 seconds
+2025-07-05 13:33:39,039 - INFO - 🧠 AI Features: Template Recognition ✓, Trend Analysis ✓, Persona Learning ✓
+2025-07-05 13:33:39,039 - INFO - 👀 Checking for new mentions with enhanced processing...
+2025-07-05 13:33:39,391 - INFO - 📬 Found 3 mentions to process
+2025-07-05 13:33:39,392 - INFO - 👤 Processing enhanced mention from user 1425813537381773314
+2025-07-05 13:33:39,392 - ERROR - Error getting image from context: 'V1LikeTweet' object has no attribute 'in_reply_to_status_id'
+2025-07-05 13:33:41,651 - INFO - Retrieved 43 trending topics
+2025-07-05 13:33:41,917 - ERROR - Error sending enhanced no-image reply: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-07-05 13:33:41,917 - INFO - 👤 Processing enhanced mention from user 1425813537381773314
+2025-07-05 13:33:41,917 - INFO - 🧟‍♂️ Processing TrendZombie request from @Barfi_31
+2025-07-05 13:33:41,917 - INFO - 🧟‍♂️ Resurrecting drake with context: crypto
+2025-07-05 13:33:44,214 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-05 13:33:44,481 - ERROR - Error sending TrendZombie reply: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-07-05 13:33:44,482 - INFO - 👤 Processing enhanced mention from user 1425813537381773314
+2025-07-05 13:33:44,482 - INFO - 🧟‍♂️ Processing TrendZombie request from @Barfi_31
+2025-07-05 13:33:44,482 - INFO - 🧟‍♂️ Resurrecting drake with context: crypto
+2025-07-05 13:33:46,381 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-05 13:33:46,681 - ERROR - Error sending TrendZombie reply: 403 Forbidden
+453 - You currently have access to a subset of X API V2 endpoints and limited v1.1 endpoints (e.g. media post, oauth) only. If you need access to this endpoint, you may need a different access level. You can learn more here: https://developer.x.com/en/portal/product
+2025-07-05 13:33:46,681 - INFO - 😴 Sleeping for 180 seconds...
+2025-07-05 13:36:46,688 - INFO - 👀 Checking for new mentions with enhanced processing...
+2025-07-05 13:36:46,942 - WARNING - ⏰ Rate limit hit, waiting...
