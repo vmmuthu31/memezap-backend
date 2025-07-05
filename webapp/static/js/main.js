@@ -164,28 +164,19 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear form on page load to prevent issues on refresh
   const memeForm = document.querySelector(".meme-form");
   if (memeForm) {
-    // Clear form inputs
-    memeForm.reset();
-
-    // Clear image preview
-    const imagePreview = document.getElementById("imagePreview");
-    if (imagePreview) {
-      imagePreview.style.display = "none";
-      imagePreview.innerHTML = "";
+    // Show any existing result section
+    const existingResult = document.querySelector(".result-section");
+    if (existingResult) {
+      existingResult.closest(".row").style.display = "block";
+      existingResult.style.display = "block";
     }
 
-    // Show upload placeholder
-    const uploadPlaceholder = document.querySelector(".upload-placeholder");
-    if (uploadPlaceholder) {
-      uploadPlaceholder.style.display = "block";
-    }
+    memeForm.addEventListener("submit", function (e) {
+      // Show loading state
+      showLoadingSpinner();
 
-    // Remove any existing result sections
-    const existingResults = document.querySelectorAll(".result-section");
-    existingResults.forEach((result) => {
-      if (result.parentElement && result.parentElement.parentElement) {
-        result.parentElement.parentElement.remove();
-      }
+      // Let the form submit normally
+      // The server will handle the response and render the result section
     });
   }
 
@@ -252,7 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function hideLoadingSpinner() {
     const generateBtn = document.getElementById("generateBtn");
     if (generateBtn) {
-      generateBtn.innerHTML = '<i class="fas fa-magic me-2"></i>Generate Meme';
+      generateBtn.innerHTML = "Generate Meme";
       generateBtn.disabled = false;
     }
   }
@@ -290,109 +281,61 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Add submit handler to meme generation form
-  if (memeForm) {
-    memeForm.addEventListener("submit", function (e) {
-      e.preventDefault(); // Prevent default form submission
+  // Function to clear template
+  function clearTemplate() {
+    // Clear template preview
+    const templatePreview = document.getElementById("templatePreview");
+    if (templatePreview) {
+      templatePreview.style.display = "none";
+    }
 
-      // Check if an image file is selected
-      const imageInput = document.getElementById("imageInput");
-      if (!imageInput || !imageInput.files || imageInput.files.length === 0) {
-        showErrorMessage(
-          "Please select an image file before generating a meme!"
-        );
-        return;
-      }
+    // Show upload placeholder
+    const uploadPlaceholder = document.querySelector(".upload-placeholder");
+    if (uploadPlaceholder) {
+      uploadPlaceholder.style.display = "block";
+    }
 
-      // Check if at least one text field has content
-      const topText = document
-        .querySelector('input[name="top_text"]')
-        .value.trim();
-      const bottomText = document
-        .querySelector('input[name="bottom_text"]')
-        .value.trim();
-      const additionalText = document
-        .querySelector('textarea[name="additional_text"]')
-        .value.trim();
+    // Clear session storage
+    sessionStorage.removeItem("selectedTemplate");
 
-      if (!topText && !bottomText && !additionalText) {
-        showErrorMessage("Please enter some text for your meme!");
-        return;
-      }
+    // Redirect to clean URL
+    window.location.href = window.location.pathname;
+  }
 
-      // Show loading spinner
-      showLoadingSpinner();
+  // Function to generate another meme
+  function generateAnother() {
+    // Clear form
+    const form = document.querySelector(".meme-form");
+    if (form) {
+      form.reset();
+    }
 
-      // Create FormData object
-      const formData = new FormData(this);
+    // Clear template
+    clearTemplate();
 
-      // Combine text fields into a single caption
-      const caption_parts = [];
-      if (topText) caption_parts.push(topText);
-      if (bottomText) caption_parts.push(bottomText);
-      if (additionalText) caption_parts.push(additionalText);
+    // Hide result section
+    const resultSection = document.querySelector(".result-section");
+    if (resultSection) {
+      resultSection.closest(".row").style.display = "none";
+    }
 
-      const caption = caption_parts.join("|");
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-      // Set the combined caption
-      formData.set("caption", caption);
-
-      // Remove individual text fields to avoid confusion
-      formData.delete("top_text");
-      formData.delete("bottom_text");
-      formData.delete("additional_text");
-
-      console.log("Sending caption:", caption); // Debug log
-
-      // Send POST request to API
-      fetch(this.action, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          // Check if response is JSON or file
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            return response.json();
-          } else {
-            // Handle file response
-            return response.blob().then((blob) => {
-              const url = URL.createObjectURL(blob);
-              return { meme_url: url, is_file: true };
-            });
-          }
-        })
-        .then((data) => {
-          if (data.error) {
-            throw new Error(data.error);
-          }
-
-          // Hide loading spinner
-          hideLoadingSpinner();
-
-          // Display the generated meme
-          displayGeneratedMeme(
-            data.meme_url,
-            data.from_template,
-            data.similarity_score
-          );
-
-          // Show success message
-          showSuccessMessage("Meme generated successfully!");
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          hideLoadingSpinner();
-          showErrorMessage(`Error generating meme: ${error.message}`);
-        });
-    });
+  // Function to share on Twitter
+  function shareOnTwitter() {
+    const memeImg = document.querySelector(".generated-meme");
+    if (memeImg) {
+      const memeUrl = memeImg.getAttribute("data-view-url") || memeImg.src;
+      const tweetText = encodeURIComponent(
+        "Check out this awesome meme I created with MemeOS! 🔥"
+      );
+      const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(
+        memeUrl
+      )}`;
+      window.open(tweetUrl, "_blank");
+    }
   }
 });
 
@@ -410,13 +353,51 @@ function clearPreviousMeme() {
 
 // Helper function to display generated meme
 function displayGeneratedMeme(memeUrl, fromTemplate, similarityScore) {
-  // Remove existing result section if any
+  // Clean up the meme URL to work with serve_data_file route
+  const cleanMemeUrl = memeUrl.replace("/data/", "/");
+
+  // Get the proper URL using Flask's url_for (via data attribute)
+  const urlTemplate = document.querySelector('meta[name="meme-url-template"]');
+  const baseUrl = urlTemplate ? urlTemplate.getAttribute("content") : "/data";
+  const properMemeUrl = `${baseUrl}/${cleanMemeUrl.replace(/^\//, "")}`;
+
+  // Check if we already have a server-rendered result section
   const existingResult = document.querySelector(".result-section");
   if (existingResult) {
-    existingResult.remove();
+    // Update the existing result section
+    const memeImage = existingResult.querySelector(".generated-meme");
+    if (memeImage) {
+      memeImage.src = properMemeUrl;
+      memeImage.setAttribute("data-view-url", properMemeUrl);
+      memeImage.setAttribute("data-download-url", properMemeUrl);
+    }
+
+    // Update view and download links
+    const viewLink = existingResult.querySelector("a.btn-primary");
+    const downloadLink = existingResult.querySelector("a.btn-success");
+    if (viewLink) viewLink.href = properMemeUrl;
+    if (downloadLink) downloadLink.href = properMemeUrl;
+
+    // Update template info if needed
+    const templateInfo = existingResult.querySelector(".template-info");
+    if (templateInfo) {
+      templateInfo.innerHTML = fromTemplate
+        ? `<i class="fas fa-template me-1"></i>Generated from template (${
+            similarityScore ? similarityScore.toFixed(1) : 0
+          }% match)`
+        : `<i class="fas fa-sparkles me-1"></i>Original creation`;
+    }
+
+    // Make sure it's visible
+    existingResult.closest(".row").style.display = "block";
+    existingResult.style.display = "block";
+
+    // Scroll to the result
+    existingResult.scrollIntoView({ behavior: "smooth" });
+    return;
   }
 
-  // Create new result section
+  // If no existing result section, create a new one
   const resultSection = document.createElement("div");
   resultSection.className = "row mt-5";
   resultSection.innerHTML = `
@@ -438,13 +419,15 @@ function displayGeneratedMeme(memeUrl, fromTemplate, similarityScore) {
         </div>
         <div class="result-body">
           <div class="meme-display">
-            <img src="${memeUrl}" alt="Generated Meme" class="generated-meme" />
+            <img src="${properMemeUrl}" alt="Generated Meme" class="generated-meme" 
+                 data-view-url="${properMemeUrl}" 
+                 data-download-url="${properMemeUrl}" />
           </div>
           <div class="result-actions">
-            <a href="${memeUrl}" class="btn btn-primary" target="_blank">
+            <a href="${properMemeUrl}" class="btn btn-primary" target="_blank">
               <i class="fas fa-external-link-alt me-1"></i> View Full Size
             </a>
-            <a href="${memeUrl}" class="btn btn-success" download="meme.jpg">
+            <a href="${properMemeUrl}" class="btn btn-success" download="meme.jpg">
               <i class="fas fa-download me-1"></i> Download
             </a>
             <button class="btn btn-secondary" onclick="shareOnTwitter()">
@@ -463,7 +446,6 @@ function displayGeneratedMeme(memeUrl, fromTemplate, similarityScore) {
   const container = document.querySelector(".generator-section .container");
   if (container) {
     container.appendChild(resultSection);
-
     // Scroll to the result
     resultSection.scrollIntoView({ behavior: "smooth" });
   }
@@ -539,45 +521,3 @@ function shareMeme(url) {
     });
   }
 }
-
-// Global helper functions for template actions
-window.shareOnTwitter = function () {
-  const memeImg = document.querySelector(".generated-meme");
-  if (memeImg) {
-    const tweetText = encodeURIComponent(
-      "Check out this awesome meme I created with MemeOS! 🔥"
-    );
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
-    window.open(tweetUrl, "_blank");
-  }
-};
-
-window.generateAnother = function () {
-  // Clear the form
-  const form = document.querySelector(".meme-form");
-  if (form) {
-    form.reset();
-
-    // Clear image preview
-    const imagePreview = document.getElementById("imagePreview");
-    if (imagePreview) {
-      imagePreview.style.display = "none";
-      imagePreview.innerHTML = "";
-    }
-
-    // Show upload placeholder
-    const uploadPlaceholder = document.querySelector(".upload-placeholder");
-    if (uploadPlaceholder) {
-      uploadPlaceholder.style.display = "block";
-    }
-
-    // Remove result section
-    const resultSection = document.querySelector(".result-section");
-    if (resultSection) {
-      resultSection.parentElement.parentElement.remove();
-    }
-
-    // Scroll back to top
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-};

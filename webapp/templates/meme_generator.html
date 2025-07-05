@@ -17,7 +17,7 @@ Moment{% endblock %} {% block content %}
           <div class="generator-body">
             <form
               method="POST"
-              action="{{ url_for('proxy_to_meme_api') }}"
+              action="{{ url_for('main.meme_generator') }}"
               enctype="multipart/form-data"
               class="meme-form"
             >
@@ -29,15 +29,34 @@ Moment{% endblock %} {% block content %}
                   <i class="fas fa-upload me-2"></i>{{ form.image.label.text }}
                 </label>
                 <div class="upload-area" id="uploadArea">
-                  {{ form.image(class="form-control file-input",
-                  id="imageInput") }}
+                  {{ form.image(class="file-input", id="imageInput") }} {% if
+                  template_url %}
+                  <!-- Show selected template -->
+                  <div class="template-preview" id="templatePreview">
+                    <img src="{{ template_url }}" alt="{{ template_name }}" />
+                    <div class="template-info">
+                      <h4>{{ template_name }}</h4>
+                      <p>Selected template - add your text below</p>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        onclick="clearTemplate()"
+                      >
+                        <i class="fas fa-times me-1"></i>Clear Template
+                      </button>
+                    </div>
+                  </div>
+                  {% else %}
+                  <!-- Default upload placeholder -->
                   <div class="upload-placeholder">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <p>Drag & drop your image here or click to browse</p>
-                    <small>Supports JPG, PNG, GIF (Max 16MB)</small>
+                    <p>Drop your image here or click to browse</p>
+                    <small>Supports JPG, PNG, GIF (max 10MB)</small>
                   </div>
+                  {% endif %}
                   <div class="image-preview" id="imagePreview"></div>
                 </div>
+                <small class="form-text">{{ form.image.description }}</small>
                 {% if form.image.errors %}
                 <div class="error-message">
                   {% for error in form.image.errors %} {{ error }} {% endfor %}
@@ -164,7 +183,7 @@ Moment{% endblock %} {% block content %}
 
     <!-- Generated Meme Display -->
     {% if last_meme_url %}
-    <div class="row mt-5">
+    <div class="row mt-5" id="resultRow">
       <div class="col-12">
         <div class="result-section">
           <div class="result-header">
@@ -189,22 +208,24 @@ Moment{% endblock %} {% block content %}
           <div class="result-body">
             <div class="meme-display">
               <img
-                src="{{ last_meme_url }}"
+                src="{{ url_for('main.serve_data_file', filename=last_meme_url.strip('/')) }}"
                 alt="Generated Meme"
                 class="generated-meme"
+                data-view-url="{{ url_for('main.serve_data_file', filename=last_meme_url.strip('/')) }}"
+                data-download-url="{{ url_for('main.serve_data_file', filename=last_meme_url.strip('/')) }}"
               />
             </div>
 
             <div class="result-actions">
               <a
-                href="{{ last_meme_url }}"
+                href="{{ url_for('main.serve_data_file', filename=last_meme_url.strip('/')) }}"
                 class="btn btn-primary"
                 target="_blank"
               >
                 <i class="fas fa-external-link-alt me-1"></i> View Full Size
               </a>
               <a
-                href="{{ last_meme_url }}"
+                href="{{ url_for('main.serve_data_file', filename=last_meme_url.strip('/')) }}"
                 class="btn btn-success"
                 download="meme.jpg"
               >
@@ -227,7 +248,27 @@ Moment{% endblock %} {% block content %}
     {% endif %}
   </div>
 </div>
-{% endblock %} {% block extra_css %}
+
+<!-- Add flash messages section -->
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div class="flash-messages">
+  {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %} {% endwith %} {% endblock %} {% block extra_css %}
 <style>
   .generator-section {
     padding: 2rem 0;
@@ -381,6 +422,49 @@ Moment{% endblock %} {% block content %}
     max-height: 300px;
     border-radius: 10px;
     border: 2px solid #00ff41;
+  }
+
+  /* Template Preview Styles */
+  .template-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 255, 65, 0.1);
+    border-radius: 10px;
+    border: 2px solid #00ff41;
+  }
+
+  .template-preview img {
+    max-width: 120px;
+    max-height: 120px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 65, 0.3);
+  }
+
+  .template-info h4 {
+    color: #00ff41;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .template-info p {
+    color: rgba(0, 255, 65, 0.8);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .template-info .btn {
+    background: rgba(0, 255, 65, 0.1);
+    border-color: rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+    font-size: 0.8rem;
+  }
+
+  .template-info .btn:hover {
+    background: rgba(0, 255, 65, 0.2);
+    border-color: #00ff41;
+    color: #00ff41;
   }
 
   /* Generate Button */
@@ -642,11 +726,65 @@ Moment{% endblock %} {% block content %}
 {% endblock %} {% block extra_js %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const justGenerated = urlParams.get("generated");
+    const templateId = urlParams.get("template_id");
+    const templateName = urlParams.get("template_name");
+
+    if (!justGenerated) {
+      // If we didn't just generate a meme, clear everything
+      const resultRow = document.getElementById("resultRow");
+      if (resultRow) {
+        resultRow.style.display = "none";
+      }
+
+      // Clear session data
+      fetch("/clear-meme-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    // Clear URL parameters on page load/refresh
+    if (
+      window.performance &&
+      window.performance.navigation.type ===
+        window.performance.navigation.TYPE_RELOAD
+    ) {
+      const url = new URL(window.location);
+      url.search = "";
+      window.history.replaceState({}, "", url);
+
+      // Hide result section and clear session
+      const resultRow = document.getElementById("resultRow");
+      if (resultRow) {
+        resultRow.style.display = "none";
+      }
+
+      fetch("/clear-meme-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
     const uploadArea = document.getElementById("uploadArea");
     const imageInput = document.getElementById("imageInput");
     const imagePreview = document.getElementById("imagePreview");
     const generateBtn = document.getElementById("generateBtn");
     const uploadPlaceholder = document.querySelector(".upload-placeholder");
+    const templatePreview = document.getElementById("templatePreview");
+
+    // If template is selected from URL parameters
+    if (templatePreview && (templateId || templateName)) {
+      if (uploadPlaceholder) {
+        uploadPlaceholder.style.display = "none";
+      }
+      templatePreview.style.display = "flex";
+    }
 
     // Drag and drop functionality
     uploadArea.addEventListener("dragover", function (e) {
@@ -685,6 +823,12 @@ Moment{% endblock %} {% block content %}
           imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
           imagePreview.style.display = "block";
           uploadPlaceholder.style.display = "none";
+
+          // Hide template preview if showing
+          const templatePreview = document.getElementById("templatePreview");
+          if (templatePreview) {
+            templatePreview.style.display = "none";
+          }
         };
         reader.readAsDataURL(file);
       }
@@ -694,6 +838,33 @@ Moment{% endblock %} {% block content %}
     document
       .querySelector(".meme-form")
       .addEventListener("submit", function (e) {
+        // Check if we have a template selected
+        const templatePreview = document.getElementById("templatePreview");
+        const urlParams = new URLSearchParams(window.location.search);
+        const templateId = urlParams.get("template_id");
+        const templateName = urlParams.get("template_name");
+
+        const hasTemplate =
+          (templatePreview && templatePreview.style.display !== "none") ||
+          templateId ||
+          templateName;
+        const hasFile = imageInput.files.length > 0;
+
+        // Check if we have any text input
+        const topText = document.getElementById("top_text").value.trim();
+        const bottomText = document.getElementById("bottom_text").value.trim();
+        const additionalText = document
+          .getElementById("additional_text")
+          .value.trim();
+        const hasText = topText || bottomText || additionalText;
+
+        // If we have a template, we're good to go
+        if (hasTemplate || hasFile) {
+          console.log("Template or file found, proceeding with generation");
+        }
+
+        // Templates can work with or without text, so no need to warn
+
         generateBtn.disabled = true;
         generateBtn.classList.add("processing");
         generateBtn.textContent = "Generating Meme...";
@@ -753,6 +924,7 @@ Moment{% endblock %} {% block content %}
 
   // Generate another meme
   function generateAnother() {
+    // Clear form and scroll to top
     window.scrollTo({ top: 0, behavior: "smooth" });
     document.getElementById("imageInput").value = "";
     document.getElementById("imagePreview").style.display = "none";
@@ -762,6 +934,37 @@ Moment{% endblock %} {% block content %}
     document.querySelectorAll(".terminal-input").forEach((input) => {
       input.value = "";
     });
+
+    // Hide result section
+    const resultRow = document.getElementById("resultRow");
+    if (resultRow) {
+      resultRow.style.display = "none";
+    }
+
+    // Clear session data
+    fetch("/clear-meme-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
+
+  // Clear template selection
+  function clearTemplate() {
+    // Remove template from URL
+    const url = new URL(window.location);
+    url.searchParams.delete("template_id");
+    url.searchParams.delete("template_name");
+    window.history.replaceState({}, "", url);
+
+    // Reload page to clear template
+    window.location.reload();
+  }
+
+  // Make sure functions are available globally
+  window.clearTemplate = clearTemplate;
+  window.generateAnother = generateAnother;
+  window.shareOnTwitter = shareOnTwitter;
 </script>
 {% endblock %}

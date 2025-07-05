@@ -10,7 +10,7 @@ import requests
 import uuid
 from flask import (
     Blueprint, render_template, redirect, url_for, 
-    flash, request, jsonify, current_app, session
+    flash, request, jsonify, current_app, session, send_file, abort
 )
 import werkzeug.utils
 import shutil
@@ -612,30 +612,148 @@ def clear_chat():
     session.pop('chat_history', None)
     return redirect(url_for('main.chat'))
 
+@main.route('/clear-meme-session', methods=['POST'])
+def clear_meme_session():
+    """Clear meme-related session data"""
+    session.pop('last_meme_url', None)
+    session.pop('from_template', None)
+    session.pop('similarity_score', None)
+    session.pop('selected_template_id', None)
+    session.pop('selected_template_name', None)
+    session.pop('selected_template_url', None)
+    return jsonify({'status': 'success'})
+
 @main.route('/meme-generator', methods=['GET', 'POST'])
 def meme_generator():
     """Meme generator page"""
     form = MemeForm()
-    last_meme_url = None
+    last_meme_url = session.get('last_meme_url')  # Get last meme URL from session
     
-    if form.validate_on_submit():
-        # Handle form submission similar to the index route
-        api_url = get_api_url()
+    # Handle template parameters from URL
+    template_id = request.args.get('template_id')
+    template_name = request.args.get('template_name')
+    template_url = None
+    
+    # If template parameters are provided, get the template URL
+    if template_id and template_name and template_id.strip():
+        try:
+            # Get template info from template service
+            template_info = template_service.get_template_by_id(template_id)
+            if template_info:
+                template_url = template_info.get('url')
+                # Store template info in session for form processing
+                session['selected_template_id'] = template_id
+                session['selected_template_name'] = template_name
+                session['selected_template_url'] = template_url
+                logger.info(f"Template selected: {template_name} (ID: {template_id})")
+        except Exception as e:
+            logger.error(f"Error loading template {template_id}: {e}")
+    elif template_name and template_name.strip():
+        # If we have template name but no ID, try to find it by name
+        try:
+            # Search for template by name
+            search_results = template_service.search_templates(template_name, limit=1)
+            if search_results:
+                template_info = search_results[0]
+                template_id = template_info.get('id') or template_info.get('template_id')
+                template_url = template_info.get('url')
+                if template_id and template_url:
+                    session['selected_template_id'] = template_id
+                    session['selected_template_name'] = template_name
+                    session['selected_template_url'] = template_url
+                    logger.info(f"Template found by name: {template_name} (ID: {template_id})")
+        except Exception as e:
+            logger.error(f"Error searching template by name {template_name}: {e}")
+    
+    if request.method == 'POST':
+        # Manual validation and form handling
+        if not form.csrf_token.validate(form):
+            flash('Security validation failed. Please try again.', 'error')
+            return redirect(url_for('main.meme_generator'))
         
+        # Check if we have either a template or uploaded file
+        has_template = session.get('selected_template_id') and session.get('selected_template_url')
+        has_file = form.image.data and form.image.data.filename
+        
+        if not has_template and not has_file:
+            flash('Please upload an image or select a template from the gallery.', 'error')
+            return redirect(url_for('main.meme_generator'))
+        
+        # Validate file if uploaded
+        if has_file:
+            if not form.image.validate(form):
+                flash('Invalid image file. Please upload JPG, PNG, GIF, or WebP files only.', 'error')
+                return redirect(url_for('main.meme_generator'))
+        
+        # Handle form submission
         try:
             # Prepare form data
-            form_data = {
-                'top_text': form.top_text.data or '',
-                'bottom_text': form.bottom_text.data or '',
-                'additional_text': form.additional_text.data or ''
-            }
+            top_text = form.top_text.data or ''
+            bottom_text = form.bottom_text.data or ''
+            additional_text = form.additional_text.data or ''
             
-            files = {}
-            if form.image.data:
-                files['image'] = (form.image.data.filename, form.image.data.stream, form.image.data.content_type)
+            # Combine all text parts with pipe separator for API
+            caption = "|".join(filter(None, [top_text, bottom_text, additional_text]))
             
-            # Make request to API
-            response = requests.post(api_url, data=form_data, files=files, timeout=30)
+            # Check if we have a template selected
+            has_template = session.get('selected_template_id') and session.get('selected_template_url')
+            
+            if has_template and not form.image.data:
+                # Template-only generation (no uploaded file)
+                api_url = f"http://localhost:{os.environ.get('MEME_API_PORT', '8001')}/api/smart_generate"
+                
+                form_data = {
+                    'image_url': session.get('selected_template_url'),
+                    'caption': caption,
+                    'template_id': session.get('selected_template_id'),
+                    'template_name': session.get('selected_template_name')
+                }
+                
+                logger.info(f"Generating meme from template: {session.get('selected_template_name')}")
+                response = requests.post(api_url, data=form_data, headers={'X-Requested-With': 'XMLHttpRequest'}, timeout=30)
+                
+            elif form.image.data:
+                # File upload generation (with or without template)
+                uploaded_file = form.image.data
+                filename = werkzeug.utils.secure_filename(uploaded_file.filename)
+                
+                # Create temp directory for uploads if it doesn't exist
+                user_query_dir = Path(__file__).parent.parent / "data" / "user_query_meme"
+                user_query_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Save the file temporarily with a unique name
+                unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
+                original_path = user_query_dir / unique_filename
+                uploaded_file.save(original_path)
+                
+                logger.info(f"Saved uploaded image to {original_path}")
+                
+                # Upload to S3 and get URL
+                image_url = upload_image_to_s3(original_path)
+                
+                if not image_url:
+                    flash("Failed to upload image. Please try again.", "error")
+                    return redirect(url_for('main.meme_generator'))
+                
+                # Use smart generation API for better results
+                api_url = f"http://localhost:{os.environ.get('MEME_API_PORT', '8001')}/api/smart_generate"
+                
+                form_data = {
+                    'image_url': image_url,
+                    'caption': caption
+                }
+                
+                # Add template info if available (for comparison)
+                if has_template:
+                    form_data['template_id'] = session.get('selected_template_id')
+                    form_data['template_name'] = session.get('selected_template_name')
+                
+                logger.info(f"Generating meme from uploaded file with caption: {caption}")
+                response = requests.post(api_url, data=form_data, headers={'X-Requested-With': 'XMLHttpRequest'}, timeout=30)
+                
+            else:
+                flash("Please upload an image or select a template.", "error")
+                return redirect(url_for('main.meme_generator'))
             
             if response.status_code == 200:
                 # Handle the response based on content type
@@ -644,32 +762,90 @@ def meme_generator():
                 if 'application/json' in content_type:
                     # JSON response with meme URL
                     data = response.json()
-                    last_meme_url = data.get('meme_url')
+                    meme_url = data.get('meme_url')
                     
-                    # Store session data
-                    is_from_template = data.get('from_template', False)
-                    session['from_template'] = 'true' if is_from_template else 'false'
-                    session['similarity_score'] = data.get('similarity_score', 0)
-                    
+                    if meme_url:
+                        # Convert relative URL to absolute path for local serving
+                        if meme_url.startswith('/'):
+                            # Remove any leading /data prefix since serve_data_file will handle it
+                            last_meme_url = meme_url.replace('/data/', '/')
+                        else:
+                            last_meme_url = f"/{meme_url}"
+                        
+                        # Store session data
+                        is_from_template = data.get('from_template', False)
+                        session['from_template'] = 'true' if is_from_template else 'false'
+                        session['similarity_score'] = data.get('similarity_score', 0)
+                        session['last_meme_url'] = last_meme_url  # Store the URL in session
+                        
+                        flash('Meme generated successfully!', 'success')
+                        logger.info(f"Meme generated successfully: {last_meme_url}")
+                        
+                        # Clear template selection after successful generation
+                        session.pop('selected_template_id', None)
+                        session.pop('selected_template_name', None)
+                        session.pop('selected_template_url', None)
+                        
+                        # Redirect with generated parameter
+                        return redirect(url_for('main.meme_generator', generated=True))
+                    else:
+                        flash('Failed to generate meme - no URL returned', 'error')
+                        
                 elif 'image/' in content_type:
                     # Direct image response - save and serve
-                    user_response_dir = Path(current_app.instance_path).parent / 'data' / 'user_response_meme'
-                    saved_image_path = save_image_from_response(response, user_response_dir)
-                    last_meme_url = url_for('serve_data_file', filename=f'user_response_meme/{saved_image_path.name}')
-                
-                if last_meme_url:
-                    flash('Meme generated successfully!', 'success')
+                    user_response_dir = Path(__file__).parent.parent / 'data' / 'user_response_meme'
+                    user_response_dir.mkdir(parents=True, exist_ok=True)
+                    saved_image_path = save_image_from_response(response, str(user_response_dir))
+                    
+                    if saved_image_path:
+                        # Convert to relative path for serving
+                        rel_path = os.path.relpath(saved_image_path, Path(__file__).parent.parent)
+                        last_meme_url = f"/{rel_path.replace(os.sep, '/')}"
+                        
+                        # Store the URL in session
+                        session['last_meme_url'] = last_meme_url
+                        
+                        flash('Meme generated successfully!', 'success')
+                        logger.info(f"Meme saved locally: {last_meme_url}")
+                        
+                        # Clear template selection after successful generation
+                        session.pop('selected_template_id', None)
+                        session.pop('selected_template_name', None)
+                        session.pop('selected_template_url', None)
+                        
+                        # Redirect with generated parameter
+                        return redirect(url_for('main.meme_generator', generated=True))
+                    else:
+                        flash('Failed to save generated meme', 'error')
                 else:
-                    flash('Failed to generate meme', 'error')
+                    flash('Unexpected response format from meme service', 'error')
             else:
-                flash(f'Error generating meme: {response.status_code}', 'error')
+                error_msg = f'Error generating meme: {response.status_code}'
+                if response.text:
+                    try:
+                        error_data = response.json()
+                        error_msg += f' - {error_data.get("error", response.text)}'
+                    except:
+                        error_msg += f' - {response.text}'
+                flash(error_msg, 'error')
+                logger.error(f"Meme generation failed: {error_msg}")
                 
         except requests.RequestException as e:
             flash(f'Error connecting to meme service: {str(e)}', 'error')
         except Exception as e:
             flash(f'Unexpected error: {str(e)}', 'error')
     
-    return render_template('meme_generator.html', form=form, last_meme_url=last_meme_url)
+    # Get last meme URL from session
+    last_meme_url = session.get('last_meme_url')
+    logger.info(f"Rendering template with last_meme_url: {last_meme_url}")
+    logger.info(f"Session data: {dict(session)}")
+    
+    return render_template('meme_generator.html', 
+                         form=form, 
+                         last_meme_url=last_meme_url,
+                         template_id=template_id,
+                         template_name=template_name,
+                         template_url=template_url)
 
 @main.route('/trendzombie')
 def trendzombie():
@@ -829,19 +1005,53 @@ def api_get_persona(user_id):
 
 @main.route('/api/persona-suggestions', methods=['POST'])
 def api_persona_suggestions():
-    """API endpoint to get personalized meme suggestions."""
+    """Get persona-based meme suggestions."""
     try:
         data = request.get_json()
-        user_id = data.get('user_id', session.get('user_id', 'anonymous'))
-        context = data.get('context', '')
+        user_id = data.get('user_id', 'anonymous')
         
-        suggestions = persona_service.generate_personalized_suggestions(user_id, context)
+        # Get user's persona
+        persona = persona_service.get_user_persona(user_id)
+        
+        if not persona:
+            return jsonify({'error': 'No persona found for user'}), 404
+        
+        # Generate suggestions based on persona
+        suggestions = persona_service.generate_persona_suggestions(persona)
         
         return jsonify({
             'success': True,
-            'suggestions': suggestions
+            'suggestions': suggestions,
+            'persona': persona
         })
         
     except Exception as e:
         logger.error(f"Error getting persona suggestions: {e}")
         return jsonify({'error': str(e)}), 500
+
+@main.route('/data/<path:filename>')
+def serve_data_file(filename):
+    """Serve files from the data directory."""
+    try:
+        # Get absolute path to data directory
+        data_dir = Path(__file__).parent.parent / 'data'
+        
+        # Clean the filename path to remove any double slashes or data prefixes
+        clean_filename = filename.replace('/data/', '/').lstrip('/')
+        file_path = data_dir / clean_filename
+        
+        # Security check - make sure file is within data directory
+        if not str(file_path.resolve()).startswith(str(data_dir.resolve())):
+            logger.error(f"Security violation - attempted to access file outside data directory: {filename}")
+            abort(403)
+        
+        if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
+            abort(404)
+        
+        logger.info(f"Serving file: {file_path}")
+        return send_file(file_path)
+        
+    except Exception as e:
+        logger.error(f"Error serving data file {filename}: {e}")
+        abort(500)

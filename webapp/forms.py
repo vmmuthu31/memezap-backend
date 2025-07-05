@@ -4,14 +4,15 @@ Form definitions for the webapp.
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, TextAreaField, SubmitField
-from wtforms.validators import InputRequired, Length, Optional
+from wtforms.validators import InputRequired, Length, Optional, ValidationError
+from flask import session, request
 
 class MemeForm(FlaskForm):
     """Form for generating memes."""
     image = FileField(
         'Upload Image', 
         validators=[
-            FileRequired(), 
+            Optional(),
             FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp'], 'Images only!')
         ]
     )

@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="meme-url-template"
+      content="{{ url_for('main.serve_data_file', filename='') }}"
+    />
     <title>{% block title %}MemeOS{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link

@@ -7,7 +7,7 @@ from pathlib import Path
 parent_dir = str(Path(__file__).resolve().parent.parent)
 sys.path.append(parent_dir)
 import os
-from flask import Flask, jsonify, redirect, url_for, request, send_from_directory, send_file, session
+from flask import Flask, jsonify, redirect, url_for, request, send_file, session
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
@@ -37,14 +37,7 @@ csrf = CSRFProtect(app)
 def inject_now():
     return {'now': datetime.utcnow()}
 
-# Serve files from data directory
-@app.route('/data/<path:filename>')
-def serve_data_file(filename):
-    """Serve files from the data directory."""
-    return send_from_directory(
-        os.path.join(parent_dir, 'data'),
-        filename
-    )
+# Note: Data file serving is handled by the views blueprint
 
 # Create a proxy route to the meme API
 @app.route('/api/generate', methods=['GET', 'POST'])

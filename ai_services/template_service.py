@@ -315,6 +315,7 @@ class TemplateService:
                 if template_id in self.templates:
                     template_info = self.templates[template_id].copy()
                     template_info['template_id'] = template_id
+                    template_info['id'] = template_id  # Add id field for template gallery
                     trending.append(template_info)
             
             return trending
