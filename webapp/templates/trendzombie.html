@@ -1,0 +1,605 @@
+{% extends "base.html" %} {% block title %}TrendZombie - AI Meme Resurrector{%
+endblock %} {% block content %}
+<div class="container mx-auto px-4 py-8">
+  <!-- Hero Section -->
+  <div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">
+      🧟‍♂️ TrendZombie
+      <span class="text-2xl font-normal text-gray-600"
+        >AI Meme Resurrector</span
+      >
+    </h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+      Watch as AI digs up dead memes and brings them back to life with modern
+      contexts. From "What if Doge commented on Bitcoin ETFs?" to resurrecting
+      classic formats with today's trends.
+    </p>
+  </div>
+
+  <!-- Stats Dashboard -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+    <div
+      class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-lg text-center"
+    >
+      <div class="text-3xl font-bold">{{ stats.total_classic_memes or 0 }}</div>
+      <div class="text-sm opacity-90">Classic Memes</div>
+    </div>
+    <div
+      class="bg-gradient-to-r from-green-500 to-blue-500 text-white p-6 rounded-lg text-center"
+    >
+      <div class="text-3xl font-bold">
+        {{ stats.high_potential_memes or 0 }}
+      </div>
+      <div class="text-sm opacity-90">High Revival Potential</div>
+    </div>
+    <div
+      class="bg-gradient-to-r from-yellow-500 to-red-500 text-white p-6 rounded-lg text-center"
+    >
+      <div class="text-3xl font-bold">
+        {{ "%.1f"|format(stats.average_age or 0) }}
+      </div>
+      <div class="text-sm opacity-90">Avg Meme Age (years)</div>
+    </div>
+    <div
+      class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-6 rounded-lg text-center"
+    >
+      <div class="text-3xl font-bold">{{ resurrected_memes|length }}</div>
+      <div class="text-sm opacity-90">Fresh Resurrections</div>
+    </div>
+  </div>
+
+  <!-- Custom Resurrection Tool -->
+  <div class="bg-white rounded-lg shadow-lg p-8 mb-12">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+      🎯 Custom Resurrection Lab
+    </h2>
+    <p class="text-gray-600 text-center mb-8">
+      Choose a classic meme and give it a modern context to bring it back to
+      life!
+    </p>
+
+    <div class="max-w-2xl mx-auto">
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Choose Classic Meme</label
+        >
+        <select
+          id="meme-select"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Select a meme to resurrect...</option>
+          {% for meme in classic_memes %}
+          <option
+            value="{{ meme.name }}"
+            data-description="{{ meme.description }}"
+          >
+            {{ meme.name }} ({{ meme.peak_years[0] }}-{{ meme.peak_years[-1] }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2"
+          >Modern Context</label
+        >
+        <textarea
+          id="context-input"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          rows="3"
+          placeholder="Enter a modern context (e.g., 'AI replacing jobs', 'Crypto market crash', 'Remote work culture')..."
+        ></textarea>
+      </div>
+
+      <div class="text-center">
+        <button
+          id="resurrect-btn"
+          class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50"
+        >
+          🧟‍♂️ Resurrect Meme
+        </button>
+      </div>
+    </div>
+
+    <!-- Resurrection Result -->
+    <div id="resurrection-result" class="mt-8 hidden">
+      <div
+        class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6"
+      >
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          🎉 Resurrection Complete!
+        </h3>
+        <div id="resurrection-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Resurrections -->
+  <div class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">
+      🔥 Fresh Resurrections
+    </h2>
+
+    {% if resurrected_memes %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for resurrection in resurrected_memes %}
+      <div
+        class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+      >
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">
+              {{ resurrection.original_meme.name }}
+            </h3>
+            <span
+              class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded"
+            >
+              {{ "%.1f"|format(resurrection.zombie_score * 100) }}% Zombie Score
+            </span>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-2">
+              <strong>Original Era:</strong> {{
+              resurrection.original_meme.peak_years[0] }}-{{
+              resurrection.original_meme.peak_years[-1] }}
+            </p>
+            <p class="text-sm text-gray-600 mb-2">
+              <strong>Modern Context:</strong> {{ resurrection.trend.name }}
+            </p>
+          </div>
+
+          <div class="bg-gray-50 p-4 rounded-lg mb-4">
+            <h4 class="font-semibold text-gray-800 mb-2">
+              🎭 Resurrected Caption:
+            </h4>
+            <p class="text-gray-700 italic">
+              {{ resurrection.resurrection_data.caption }}
+            </p>
+          </div>
+
+          <div class="text-sm text-gray-600">
+            <p>
+              <strong>Why it's viral:</strong> {{
+              resurrection.resurrection_data.viral_reason }}
+            </p>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 border-t">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-500">
+              Resurrected {{ resurrection.created_at[:10] }}
+            </span>
+            <button
+              class="text-purple-600 hover:text-purple-800 text-sm font-medium"
+            >
+              Share Resurrection
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4">🕐</div>
+      <h3 class="text-xl font-semibold text-gray-800 mb-2">
+        Resurrection in Progress
+      </h3>
+      <p class="text-gray-600">
+        AI is analyzing current trends to find the perfect memes to resurrect...
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Hall of Fame -->
+  <div class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">
+      🏆 Zombie Hall of Fame
+    </h2>
+
+    {% if hall_of_fame %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for zombie in hall_of_fame %}
+      <div
+        class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6"
+      >
+        <div class="flex items-center mb-4">
+          <div
+            class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4"
+          >
+            {{ loop.index }}
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">
+              {{ zombie.original_meme.name }}
+            </h3>
+            <p class="text-sm text-gray-600">
+              Classic from {{ zombie.original_meme.peak_years[0] }}s
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg">
+          <p class="text-gray-700 italic">
+            {{ zombie.resurrection_data.caption }}
+          </p>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <span class="text-sm text-gray-600"
+            >Score: {{ "%.1f"|format(zombie.zombie_score * 100) }}%</span
+          >
+          <span class="text-sm text-gray-600"
+            >{{ zombie.created_at[:10] }}</span
+          >
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4">👑</div>
+      <h3 class="text-xl font-semibold text-gray-800 mb-2">
+        Hall of Fame Coming Soon
+      </h3>
+      <p class="text-gray-600">
+        The best resurrections will be featured here...
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- How It Works -->
+  <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+      🧠 How TrendZombie Works
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div
+          class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4"
+        >
+          1
+        </div>
+        <h3 class="font-semibold text-gray-800 mb-2">Scan Trends</h3>
+        <p class="text-sm text-gray-600">
+          AI analyzes current events, social media trends, and viral topics
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div
+          class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4"
+        >
+          2
+        </div>
+        <h3 class="font-semibold text-gray-800 mb-2">Match Memes</h3>
+        <p class="text-sm text-gray-600">
+          Find classic memes that perfectly match the current context
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div
+          class="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4"
+        >
+          3
+        </div>
+        <h3 class="font-semibold text-gray-800 mb-2">Resurrect</h3>
+        <p class="text-sm text-gray-600">
+          Generate fresh captions that blend old formats with new contexts
+        </p>
+      </div>
+
+      <div class="text-center">
+        <div
+          class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4"
+        >
+          4
+        </div>
+        <h3 class="font-semibold text-gray-800 mb-2">Go Viral</h3>
+        <p class="text-sm text-gray-600">
+          Nostalgia meets relevance for maximum viral potential
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const memeSelect = document.getElementById("meme-select");
+    const contextInput = document.getElementById("context-input");
+    const resurrectBtn = document.getElementById("resurrect-btn");
+    const resultDiv = document.getElementById("resurrection-result");
+    const resultContent = document.getElementById("resurrection-content");
+
+    // Check if elements exist
+    if (!memeSelect || !contextInput || !resurrectBtn) {
+      console.error("Required elements not found");
+      return;
+    }
+
+    // Example contexts for different memes
+    const exampleContexts = {
+      Doge: "Bitcoin ETFs approval in 2024",
+      "Distracted Boyfriend": "Traditional jobs vs AI careers",
+      "Drake Pointing": "Manual work vs AI automation",
+      "This is Fine": "AI taking over while we adapt",
+      "Woman Yelling at Cat": "Humans arguing about AI consciousness",
+      Stonks: "AI stock market predictions",
+      "Two Buttons": "Embrace AI or resist change",
+      "Expanding Brain": "Evolution of AI capabilities",
+      "Bernie Sanders Mittens": "Waiting for AI to solve everything",
+      "Galaxy Brain": "Understanding AI complexity levels",
+    };
+
+    // Auto-fill context when meme is selected
+    memeSelect.addEventListener("change", function () {
+      const selectedMeme = this.value;
+      if (selectedMeme && exampleContexts[selectedMeme]) {
+        contextInput.placeholder = `e.g., "${exampleContexts[selectedMeme]}"`;
+        contextInput.value = ""; // Clear current value
+      }
+    });
+
+    // Resurrect meme
+    resurrectBtn.addEventListener("click", async function () {
+      const memeName = memeSelect.value;
+      const context = contextInput.value.trim();
+
+      if (!memeName || !context) {
+        alert("Please select a meme and provide a context!");
+        return;
+      }
+
+      // Show loading state
+      resurrectBtn.disabled = true;
+      resurrectBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Resurrecting...';
+
+      if (resultDiv) {
+        resultDiv.style.display = "none";
+      }
+
+      try {
+        const response = await fetch("/api/resurrect-meme", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            meme_name: memeName,
+            context: context,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.resurrection) {
+          const resurrection = data.resurrection;
+
+          // Create result display
+          const resultHTML = `
+                    <div class="resurrection-success">
+                        <h4>🎉 Successfully Resurrected!</h4>
+                        <div class="resurrection-details">
+                            <div class="original-meme">
+                                <h5>Original Meme: ${
+                                  resurrection.original_meme.name
+                                }</h5>
+                                <p class="meme-era">Era: ${
+                                  resurrection.original_meme.peak_years[0]
+                                }-${
+            resurrection.original_meme.peak_years[
+              resurrection.original_meme.peak_years.length - 1
+            ]
+          }</p>
+                            </div>
+                            <div class="modern-context">
+                                <h5>Modern Context: ${
+                                  resurrection.trend.name
+                                }</h5>
+                            </div>
+                            <div class="resurrected-caption">
+                                <h5>🎭 Resurrected Caption:</h5>
+                                <p class="caption-text">"${
+                                  resurrection.resurrection_data.caption
+                                }"</p>
+                            </div>
+                            <div class="viral-reason">
+                                <h5>Why it's viral:</h5>
+                                <p>${
+                                  resurrection.resurrection_data.viral_reason
+                                }</p>
+                            </div>
+                            <div class="zombie-score">
+                                <h5>Zombie Score: ${Math.round(
+                                  resurrection.zombie_score * 100
+                                )}%</h5>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          if (resultContent) {
+            resultContent.innerHTML = resultHTML;
+            resultDiv.style.display = "block";
+
+            // Add share functionality
+            const shareBtn = document.createElement("button");
+            shareBtn.className = "btn btn-primary mt-3";
+            shareBtn.innerHTML =
+              '<i class="fas fa-share"></i> Share This Resurrection';
+            shareBtn.onclick = function () {
+              const shareText = `${resurrection.resurrection_data.caption}\n\n- Resurrected by TrendZombie AI`;
+              if (navigator.share) {
+                navigator.share({
+                  title: "Resurrected Meme",
+                  text: shareText,
+                });
+              } else {
+                navigator.clipboard.writeText(shareText);
+                alert("Copied to clipboard!");
+              }
+            };
+            resultContent.appendChild(shareBtn);
+
+            // Scroll to result
+            resultDiv.scrollIntoView({ behavior: "smooth" });
+          } else {
+            alert("Resurrection successful! Check the console for details.");
+            console.log("Resurrection result:", resurrection);
+          }
+        } else {
+          alert("Failed to resurrect meme: " + (data.error || "Unknown error"));
+        }
+      } catch (error) {
+        console.error("Error resurrecting meme:", error);
+        alert("Error: " + error.message);
+      } finally {
+        // Reset button
+        resurrectBtn.disabled = false;
+        resurrectBtn.innerHTML = "🧟‍♂️ Resurrect Meme";
+      }
+    });
+
+    // Auto-refresh resurrections every 30 seconds
+    setInterval(function () {
+      const freshResurrections = document.querySelector(
+        ".grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.gap-6"
+      );
+      if (freshResurrections) {
+        // Add a subtle animation to indicate refresh
+        freshResurrections.style.opacity = "0.8";
+        setTimeout(() => {
+          freshResurrections.style.opacity = "1";
+        }, 500);
+      }
+    }, 30000);
+  });
+</script>
+
+<style>
+  .resurrection-success {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin: 1rem 0;
+  }
+
+  .resurrection-success h4 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .resurrection-details {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .original-meme,
+  .modern-context,
+  .resurrected-caption,
+  .viral-reason,
+  .zombie-score {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+  }
+
+  .original-meme h5,
+  .modern-context h5,
+  .resurrected-caption h5,
+  .viral-reason h5,
+  .zombie-score h5 {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #ffd700;
+  }
+
+  .meme-era {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  .caption-text {
+    font-size: 1.2rem;
+    font-style: italic;
+    font-weight: bold;
+    color: #ffd700;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    margin: 0.5rem 0;
+  }
+
+  .zombie-score {
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Improve general styling */
+  .container {
+    max-width: 1200px;
+  }
+
+  .bg-gradient-to-r {
+    transition: all 0.3s ease;
+  }
+
+  .bg-gradient-to-r:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Animation for fresh resurrections */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .grid > div {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  /* Responsive improvements */
+  @media (max-width: 768px) {
+    .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3 {
+      grid-template-columns: 1fr !important;
+    }
+
+    .text-4xl {
+      font-size: 2rem !important;
+    }
+
+    .text-2xl {
+      font-size: 1.2rem !important;
+    }
+
+    .grid-cols-1.md\\:grid-cols-4 {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+</style>

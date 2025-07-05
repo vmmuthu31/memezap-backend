@@ -1,0 +1,767 @@
+{% extends "base.html" %} {% block title %}MemeOS Generator - Create Your Viral
+Moment{% endblock %} {% block content %}
+<div class="generator-section">
+  <div class="container">
+    <div class="row">
+      <!-- Generator Interface -->
+      <div class="col-lg-8">
+        <div class="generator-card">
+          <div class="generator-header">
+            <h1><i class="fas fa-terminal me-2"></i>MemeOS Terminal</h1>
+            <div class="terminal-status">
+              <span class="status-dot"></span>
+              <span>System Ready</span>
+            </div>
+          </div>
+
+          <div class="generator-body">
+            <form
+              method="POST"
+              action="{{ url_for('proxy_to_meme_api') }}"
+              enctype="multipart/form-data"
+              class="meme-form"
+            >
+              {{ form.csrf_token }}
+
+              <!-- Image Upload -->
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-upload me-2"></i>{{ form.image.label.text }}
+                </label>
+                <div class="upload-area" id="uploadArea">
+                  {{ form.image(class="form-control file-input",
+                  id="imageInput") }}
+                  <div class="upload-placeholder">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop your image here or click to browse</p>
+                    <small>Supports JPG, PNG, GIF (Max 16MB)</small>
+                  </div>
+                  <div class="image-preview" id="imagePreview"></div>
+                </div>
+                {% if form.image.errors %}
+                <div class="error-message">
+                  {% for error in form.image.errors %} {{ error }} {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Text Inputs -->
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-arrow-up me-2"></i>{{
+                      form.top_text.label.text }}
+                    </label>
+                    {{ form.top_text(class="form-control terminal-input",
+                    placeholder="Text at the top") }} {% if form.top_text.errors
+                    %}
+                    <div class="error-message">
+                      {% for error in form.top_text.errors %} {{ error }} {%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-arrow-down me-2"></i>{{
+                      form.bottom_text.label.text }}
+                    </label>
+                    {{ form.bottom_text(class="form-control terminal-input",
+                    placeholder="Text at the bottom") }} {% if
+                    form.bottom_text.errors %}
+                    <div class="error-message">
+                      {% for error in form.bottom_text.errors %} {{ error }} {%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Additional Text -->
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-align-left me-2"></i>{{
+                  form.additional_text.label.text }}
+                </label>
+                {{ form.additional_text(class="form-control terminal-input",
+                rows=3, placeholder="Additional text (separate with | for
+                multiple lines)") }}
+                <small class="form-text"
+                  >{{ form.additional_text.description }}</small
+                >
+                {% if form.additional_text.errors %}
+                <div class="error-message">
+                  {% for error in form.additional_text.errors %} {{ error }} {%
+                  endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Submit Button -->
+              <div class="form-group">
+                {{ form.submit(class="btn btn-generate", id="generateBtn") }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Status & Tips -->
+      <div class="col-lg-4">
+        <div class="system-panel">
+          <div class="panel-header">
+            <h3><i class="fas fa-microchip me-2"></i>System Status</h3>
+          </div>
+          <div class="panel-body">
+            <div class="system-module">
+              <div class="module-name">Neural.exe</div>
+              <div class="module-status online">ONLINE</div>
+            </div>
+            <div class="system-module">
+              <div class="module-name">Vision.dll</div>
+              <div class="module-status active">ACTIVE</div>
+            </div>
+            <div class="system-module">
+              <div class="module-name">Context.sys</div>
+              <div class="module-status running">RUNNING</div>
+            </div>
+            <div class="system-module">
+              <div class="module-name">Viral.bin</div>
+              <div class="module-status ready">READY</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tips-panel">
+          <div class="panel-header">
+            <h3><i class="fas fa-lightbulb me-2"></i>Pro Tips</h3>
+          </div>
+          <div class="panel-body">
+            <div class="tip-item">
+              <i class="fas fa-fire"></i>
+              <p>Keep text short and punchy for maximum impact</p>
+            </div>
+            <div class="tip-item">
+              <i class="fas fa-target"></i>
+              <p>High contrast images work best for memes</p>
+            </div>
+            <div class="tip-item">
+              <i class="fas fa-clock"></i>
+              <p>Current trends get more viral engagement</p>
+            </div>
+            <div class="tip-item">
+              <i class="fas fa-smile"></i>
+              <p>Relatable content always wins</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generated Meme Display -->
+    {% if last_meme_url %}
+    <div class="row mt-5">
+      <div class="col-12">
+        <div class="result-section">
+          <div class="result-header">
+            <h2>
+              <i class="fas fa-check-circle me-2"></i>Meme Generated
+              Successfully!
+            </h2>
+            {% if session.get('from_template') == 'true' %}
+            <div class="template-info">
+              <i class="fas fa-template me-1"></i>
+              Generated from template ({{
+              "%.1f"|format(session.get('similarity_score', 0)) }}% match)
+            </div>
+            {% else %}
+            <div class="template-info">
+              <i class="fas fa-sparkles me-1"></i>
+              Original creation
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="result-body">
+            <div class="meme-display">
+              <img
+                src="{{ last_meme_url }}"
+                alt="Generated Meme"
+                class="generated-meme"
+              />
+            </div>
+
+            <div class="result-actions">
+              <a
+                href="{{ last_meme_url }}"
+                class="btn btn-primary"
+                target="_blank"
+              >
+                <i class="fas fa-external-link-alt me-1"></i> View Full Size
+              </a>
+              <a
+                href="{{ last_meme_url }}"
+                class="btn btn-success"
+                download="meme.jpg"
+              >
+                <i class="fas fa-download me-1"></i> Download
+              </a>
+              <button class="btn btn-secondary" onclick="shareOnTwitter()">
+                <i class="fab fa-twitter me-1"></i> Share
+              </button>
+              <button
+                class="btn btn-outline-primary"
+                onclick="generateAnother()"
+              >
+                <i class="fas fa-redo me-1"></i> Generate Another
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  .generator-section {
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+  }
+
+  .generator-card {
+    background: rgba(26, 26, 36, 0.95);
+    border: 2px solid #00ff41;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  .generator-header {
+    background: linear-gradient(45deg, #1a1a24, #252533);
+    border-bottom: 2px solid #00ff41;
+    border-radius: 13px 13px 0 0;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .generator-header h1 {
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    font-size: 1.5rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .terminal-status {
+    display: flex;
+    align-items: center;
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: #00ff41;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px #00ff41;
+  }
+
+  .generator-body {
+    padding: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 2rem;
+  }
+
+  .form-label {
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    margin-bottom: 0.8rem;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .terminal-input {
+    background: #1a1a24;
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    border-radius: 8px;
+    padding: 0.8rem;
+    transition: all 0.3s ease;
+  }
+
+  .terminal-input:focus {
+    background: #1a1a24;
+    border-color: #00ff41;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+  }
+
+  .terminal-input::placeholder {
+    color: rgba(0, 255, 65, 0.5);
+  }
+
+  /* Upload Area */
+  .upload-area {
+    position: relative;
+    border: 2px dashed rgba(0, 255, 65, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-area:hover {
+    border-color: #00ff41;
+    background: rgba(0, 255, 65, 0.05);
+  }
+
+  .upload-area.dragover {
+    border-color: #00ff41;
+    background: rgba(0, 255, 65, 0.1);
+    transform: scale(1.02);
+  }
+
+  .file-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .upload-placeholder {
+    color: #00ff41;
+  }
+
+  .upload-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .upload-placeholder p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .upload-placeholder small {
+    color: rgba(0, 255, 65, 0.7);
+  }
+
+  .image-preview {
+    display: none;
+    max-width: 100%;
+  }
+
+  .image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    border: 2px solid #00ff41;
+  }
+
+  /* Generate Button */
+  .btn-generate {
+    background: linear-gradient(45deg, #00ff41, #00cc33);
+    color: #000;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 25px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(0, 255, 65, 0.4);
+    color: #000;
+  }
+
+  .btn-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-generate.processing::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: processing 1.5s infinite;
+  }
+
+  @keyframes processing {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+
+  /* System Panel */
+  .system-panel,
+  .tips-panel {
+    background: rgba(26, 26, 36, 0.95);
+    border: 2px solid rgba(111, 66, 193, 0.5);
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .panel-header {
+    background: linear-gradient(45deg, #1a1a24, #252533);
+    border-bottom: 1px solid rgba(111, 66, 193, 0.3);
+    border-radius: 13px 13px 0 0;
+    padding: 1rem 1.5rem;
+  }
+
+  .panel-header h3 {
+    color: #6f42c1;
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .panel-body {
+    padding: 1.5rem;
+  }
+
+  .system-module {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(111, 66, 193, 0.2);
+  }
+
+  .system-module:last-child {
+    border-bottom: none;
+  }
+
+  .module-name {
+    color: #fff;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+  }
+
+  .module-status {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: "Courier New", monospace;
+  }
+
+  .module-status.online {
+    background: rgba(0, 255, 65, 0.2);
+    color: #00ff41;
+    border: 1px solid #00ff41;
+  }
+
+  .module-status.active {
+    background: rgba(253, 126, 20, 0.2);
+    color: #fd7e14;
+    border: 1px solid #fd7e14;
+  }
+
+  .module-status.running {
+    background: rgba(13, 110, 253, 0.2);
+    color: #0d6efd;
+    border: 1px solid #0d6efd;
+  }
+
+  .module-status.ready {
+    background: rgba(111, 66, 193, 0.2);
+    color: #6f42c1;
+    border: 1px solid #6f42c1;
+  }
+
+  /* Tips Panel */
+  .tip-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .tip-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .tip-item i {
+    color: #6f42c1;
+    margin-right: 1rem;
+    margin-top: 0.2rem;
+    font-size: 1.1rem;
+  }
+
+  .tip-item p {
+    color: #ccc;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  /* Result Section */
+  .result-section {
+    background: rgba(26, 26, 36, 0.95);
+    border: 2px solid #00ff41;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+    animation: resultAppear 0.5s ease-out;
+  }
+
+  @keyframes resultAppear {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .result-header {
+    background: linear-gradient(45deg, #1a1a24, #252533);
+    border-bottom: 2px solid #00ff41;
+    border-radius: 13px 13px 0 0;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .result-header h2 {
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+  }
+
+  .template-info {
+    color: #ccc;
+    font-size: 0.9rem;
+    font-family: "Courier New", monospace;
+  }
+
+  .result-body {
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .meme-display {
+    margin-bottom: 2rem;
+  }
+
+  .generated-meme {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: 15px;
+    border: 3px solid #00ff41;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .error-message {
+    color: #ff4444;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-family: "Courier New", monospace;
+  }
+
+  .form-text {
+    color: rgba(0, 255, 65, 0.7);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    font-family: "Courier New", monospace;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .generator-section {
+      padding: 1rem 0;
+    }
+
+    .generator-body {
+      padding: 1rem;
+    }
+
+    .result-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .result-actions .btn {
+      width: 200px;
+    }
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const uploadArea = document.getElementById("uploadArea");
+    const imageInput = document.getElementById("imageInput");
+    const imagePreview = document.getElementById("imagePreview");
+    const generateBtn = document.getElementById("generateBtn");
+    const uploadPlaceholder = document.querySelector(".upload-placeholder");
+
+    // Drag and drop functionality
+    uploadArea.addEventListener("dragover", function (e) {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", function (e) {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", function (e) {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        imageInput.files = files;
+        handleImagePreview(files[0]);
+      }
+    });
+
+    // File input change
+    imageInput.addEventListener("change", function (e) {
+      if (e.target.files.length > 0) {
+        handleImagePreview(e.target.files[0]);
+      }
+    });
+
+    // Image preview function
+    function handleImagePreview(file) {
+      if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+          imagePreview.style.display = "block";
+          uploadPlaceholder.style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Form submission with loading state
+    document
+      .querySelector(".meme-form")
+      .addEventListener("submit", function (e) {
+        generateBtn.disabled = true;
+        generateBtn.classList.add("processing");
+        generateBtn.textContent = "Generating Meme...";
+      });
+
+    // Terminal typing effect
+    setTimeout(() => {
+      const terminalHeader = document.querySelector(".generator-header h1");
+      if (terminalHeader) {
+        typeText(terminalHeader, "MemeOS Terminal");
+      }
+    }, 500);
+
+    function typeText(element, text) {
+      element.innerHTML = '<i class="fas fa-terminal me-2"></i>';
+      let i = 0;
+      const originalText = text;
+
+      function type() {
+        if (i < originalText.length) {
+          element.innerHTML += originalText.charAt(i);
+          i++;
+          setTimeout(type, 50);
+        }
+      }
+      type();
+    }
+
+    // System status blinking animation
+    const statusElements = document.querySelectorAll(".module-status");
+    statusElements.forEach((status, index) => {
+      setTimeout(() => {
+        status.style.animation = "blink 2s infinite";
+      }, index * 200);
+    });
+
+    // Add CSS for blink animation
+    const style = document.createElement("style");
+    style.textContent = `
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0.7; }
+            }
+        `;
+    document.head.appendChild(style);
+  });
+
+  // Share on Twitter function
+  function shareOnTwitter() {
+    const url = window.location.href;
+    const text = "Check out this meme I created with MemeOS! 🔥";
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+      text
+    )}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, "_blank");
+  }
+
+  // Generate another meme
+  function generateAnother() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.getElementById("imageInput").value = "";
+    document.getElementById("imagePreview").style.display = "none";
+    document.querySelector(".upload-placeholder").style.display = "block";
+
+    // Clear form fields
+    document.querySelectorAll(".terminal-input").forEach((input) => {
+      input.value = "";
+    });
+  }
+</script>
+{% endblock %}

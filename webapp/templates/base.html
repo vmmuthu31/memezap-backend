@@ -1,93 +1,196 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}MemeZap{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}MemeOS{% endblock %}</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
     {% block extra_css %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-laugh-squint me-2"></i>MemeZap
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+          <i class="fas fa-desktop me-2"></i>Meme<span
+            style="color: #00ff41; text-shadow: 0 0 5px #00ff41"
+            >OS</span
+          >
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}"
+                href="{{ url_for('main.index') }}"
+              >
+                <i class="fas fa-home me-1"></i>Home
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'main.meme_generator' %}active{% endif %}"
+                href="{{ url_for('main.meme_generator') }}"
+              >
+                <i class="fas fa-terminal me-1"></i>Generator
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'main.template_gallery' %}active{% endif %}"
+                href="{{ url_for('main.template_gallery') }}"
+              >
+                <i class="fas fa-images me-1"></i>Templates
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-robot me-1"></i>AI Features
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a
+                    class="dropdown-item {% if request.endpoint == 'main.trending_memes' %}active{% endif %}"
+                    href="{{ url_for('main.trending_memes') }}"
+                  >
+                    <i class="fas fa-fire me-2"></i>Trending Memes
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item {% if request.endpoint == 'main.persona_analyzer' %}active{% endif %}"
+                    href="{{ url_for('main.persona_analyzer') }}"
+                  >
+                    <i class="fas fa-brain me-2"></i>Digital Twin
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item {% if request.endpoint == 'main.roast_me' %}active{% endif %}"
+                    href="{{ url_for('main.roast_me') }}"
+                  >
+                    <i class="fas fa-fire-flame-curved me-2"></i>RoastMe AI
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item {% if request.endpoint == 'main.trendzombie' %}active{% endif %}"
+                    href="{{ url_for('main.trendzombie') }}"
+                  >
+                    <i class="fas fa-ghost me-2"></i>TrendZombie
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="#twitter-bot">
+                    <i class="fab fa-twitter me-2"></i>Twitter Bot
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <button id="theme-toggle" class="btn btn-outline-light btn-sm">
+              <i class="fas fa-moon"></i>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">
-                            <i class="fas fa-robot me-1"></i>Chat with Meme <span class="badge bg-warning text-dark rounded-pill ms-1">Coming Soon</span>
-                        </a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <button id="theme-toggle" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                </div>
-            </div>
+          </div>
         </div>
+      </div>
     </nav>
 
     <div class="funky-background">
-        <div class="funky-shape shape1"></div>
-        <div class="funky-shape shape2"></div>
-        <div class="funky-shape shape3"></div>
+      <div class="funky-shape shape1"></div>
+      <div class="funky-shape shape2"></div>
+      <div class="funky-shape shape3"></div>
     </div>
 
     <main class="container mt-4">
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
-                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show"
+        role="alert"
+      >
+        <i
+          class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"
+        ></i>
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 
     <footer class="text-white py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 text-center text-md-start">
-                    <h5 class="mb-3"><i class="fas fa-laugh-squint me-2"></i>MemeZap</h5>
-                    <p class="small mb-1">Create hilarious memes instantly with AI</p>
-                    <p class="small text-muted">Made with <i class="fas fa-heart text-danger"></i> for meme lovers</p>
-                </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <div class="social-icons mb-3">
-                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white me-3"><i class="fab fa-github"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-discord"></i></a>
-                    </div>
-                    <p>&copy; {{ now.year if now else 2023 }} MemeZap. All rights reserved.</p>
-                </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6 text-center text-md-start">
+            <h5 class="mb-3"><i class="fas fa-laugh-squint me-2"></i>MemeOS</h5>
+            <p class="small mb-1">Create hilarious memes instantly with AI</p>
+            <p class="small text-muted">
+              Made with <i class="fas fa-heart text-danger"></i> for meme lovers
+            </p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <div class="social-icons mb-3">
+              <a href="#" class="text-white me-3"
+                ><i class="fab fa-twitter"></i
+              ></a>
+              <a href="#" class="text-white me-3"
+                ><i class="fab fa-github"></i
+              ></a>
+              <a href="#" class="text-white"><i class="fab fa-discord"></i></a>
             </div>
+            <p>
+              &copy; {{ now.year if now else 2023 }} MemeOS. All rights
+              reserved.
+            </p>
+          </div>
         </div>
+      </div>
     </footer>
 
     <!-- Bootstrap JS -->
@@ -95,5 +198,5 @@
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
-</body>
-</html> 
+  </body>
+</html>

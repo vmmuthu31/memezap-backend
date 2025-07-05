@@ -22,17 +22,32 @@ import sys
 # Add parent directory to path to import from other modules
 sys.path.append(str(Path(__file__).parent.parent))
 
+# Import enhanced AI services
+from ai_services.template_service import TemplateService
+from ai_services.trend_service import TrendService
+from ai_services.persona_service import PersonaService
+from ai_services.roast_service import RoastMeService
+from ai_services.trendzombie_service import TrendZombieService
+
 logger = logging.getLogger(__name__)
 
 # Create blueprint
 main = Blueprint('main', __name__)
 
+# Initialize AI services
+template_service = TemplateService()
+trend_service = TrendService()
+persona_service = PersonaService()
+roast_service = RoastMeService()
+trendzombie_service = TrendZombieService()
+
 # Default API URL when running locally
-DEFAULT_API_URL = "http://localhost:5000/api/generate"
+DEFAULT_API_URL = "http://localhost:8000/api/generate"
 
 def get_api_url():
     """Get the configured API URL from environment or use the default."""
-    return os.environ.get('MEME_API_URL', '/api/generate')
+    meme_api_port = os.environ.get('MEME_API_PORT', '8001')
+    return f"http://localhost:{meme_api_port}/api/generate"
 
 def save_image_from_response(response, directory):
     """
@@ -61,8 +76,22 @@ def save_image_from_response(response, directory):
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    """Render the main page with meme generator form."""
+    """Render the main page with enhanced meme generator."""
     form = MemeForm()
+    
+    # Get trending suggestions for the homepage
+    trending_suggestions = []
+    try:
+        trending_suggestions = trend_service.generate_meme_suggestions_from_trends(limit=3)
+    except Exception as e:
+        logger.error(f"Error getting trending suggestions: {e}")
+    
+    # Get trending templates
+    trending_templates = []
+    try:
+        trending_templates = template_service.get_trending_templates(limit=6)
+    except Exception as e:
+        logger.error(f"Error getting trending templates: {e}")
     
     if form.validate_on_submit():
         # Process the form data here
@@ -84,6 +113,16 @@ def index():
             
             logger.info(f"Saved original image to {original_path}")
             
+            # Try template recognition first
+            template_info = None
+            try:
+                template_info = template_service.identify_template(str(original_path))
+                if template_info:
+                    logger.info(f"Template detected: {template_info['template_name']}")
+                    flash(f"🎯 Template detected: {template_info['template_name']}", "info")
+            except Exception as e:
+                logger.error(f"Error in template recognition: {e}")
+            
             # Upload to S3 and get URL
             image_url = upload_image_to_s3(original_path)
             
@@ -99,14 +138,29 @@ def index():
             # Combine all text parts with pipe separator for API
             caption = "|".join(filter(None, [top_text, bottom_text, additional_text]))
             
+            # Generate AI suggestions if no text provided
+            if not caption and template_info:
+                try:
+                    ai_suggestions = template_service.suggest_captions_for_template(template_info)
+                    if ai_suggestions:
+                        caption = ai_suggestions[0]  # Use first suggestion
+                        flash(f"💡 AI suggested: {caption}", "info")
+                except Exception as e:
+                    logger.error(f"Error generating AI suggestions: {e}")
+            
             try:
-                # Call the meme generation API
+                # Call the enhanced meme generation API
                 api_url = request.host_url.rstrip('/') + get_api_url()
                 
                 payload = {
                     'image_url': image_url,
                     'caption': caption
                 }
+                
+                # Add template info if available
+                if template_info:
+                    payload['template_id'] = template_info.get('template_id')
+                    payload['template_name'] = template_info.get('template_name')
                 
                 response = requests.post(api_url, data=payload, timeout=30)
                 
@@ -146,7 +200,19 @@ def index():
                         # Convert to relative path for use in templates
                         rel_path = os.path.relpath(result_path, Path(__file__).parent.parent)
                         session['last_meme_url'] = f"/{rel_path.replace(os.sep, '/')}"
-                        flash("Meme generated successfully!", "success")
+                        
+                        # Update user persona if session has user info
+                        user_id = session.get('user_id', 'anonymous')
+                        try:
+                            persona_service.analyze_meme_interaction(user_id, {
+                                'text': caption,
+                                'template': template_info['template_name'] if template_info else 'custom',
+                                'id': f"web_{int(datetime.now().timestamp())}"
+                            }, 'created')
+                        except Exception as e:
+                            logger.error(f"Error updating persona: {e}")
+                        
+                        flash("Meme generated successfully! 🎭✨", "success")
                     else:
                         # Fallback to response URL if local save failed
                         session['last_meme_url'] = response.url
@@ -162,7 +228,194 @@ def index():
             
         return redirect(url_for('main.index'))
     
-    return render_template('index.html', form=form, last_meme_url=session.get('last_meme_url'))
+    return render_template('index.html', 
+                         form=form, 
+                         last_meme_url=session.get('last_meme_url'),
+                         trending_suggestions=trending_suggestions,
+                         trending_templates=trending_templates)
+
+@main.route('/roast-me', methods=['GET', 'POST'])
+def roast_me():
+    """RoastMe AI feature page."""
+    form = MemeForm()
+    roast_result = None
+    
+    if form.validate_on_submit() and form.image.data:
+        # Process the uploaded image
+        uploaded_file = form.image.data
+        filename = werkzeug.utils.secure_filename(uploaded_file.filename)
+        
+        # Create temp directory
+        temp_dir = Path(__file__).parent.parent / "data" / "temp_roast"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save temporarily
+        unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
+        temp_path = temp_dir / unique_filename
+        uploaded_file.save(temp_path)
+        
+        try:
+            # Get roast intensity from form or default to medium
+            intensity = request.form.get('roast_intensity', 'medium')
+            
+            # Generate roast
+            roast_result = roast_service.generate_roast(str(temp_path), intensity)
+            
+            # Clean up temp file
+            temp_path.unlink()
+            
+            flash(f"🔥 Roast generated with {intensity} intensity!", "success")
+            
+        except Exception as e:
+            logger.error(f"Error generating roast: {e}")
+            flash("Error generating roast. Please try again.", "error")
+            if temp_path.exists():
+                temp_path.unlink()
+    
+    return render_template('roast_me.html', form=form, roast_result=roast_result)
+
+@main.route('/trending-memes')
+def trending_memes():
+    """Trending memes page with AI suggestions."""
+    try:
+        # Get trending suggestions
+        trending_suggestions = trend_service.generate_meme_suggestions_from_trends(limit=10)
+        
+        # Get trend analytics (if available)
+        trend_analytics = {}
+        try:
+            if hasattr(trend_service, 'get_trend_analytics'):
+                trend_analytics = trend_service.get_trend_analytics()
+        except Exception as e:
+            logger.error(f"Error getting trend analytics: {e}")
+        
+        return render_template('trending_memes.html',
+                             trending_suggestions=trending_suggestions,
+                             trend_analytics=trend_analytics)
+        
+    except Exception as e:
+        logger.error(f"Error loading trending memes: {e}")
+        flash("Error loading trending content. Please try again.", "error")
+        return render_template('trending_memes.html',
+                             trending_suggestions=[],
+                             trend_analytics={})
+
+@main.route('/persona-analyzer')
+def persona_analyzer():
+    """Persona analyzer page."""
+    user_id = session.get('user_id', 'anonymous')
+    
+    try:
+        # Get user persona
+        persona = persona_service.get_user_persona(user_id)
+        
+        # Generate personalized suggestions
+        personalized_suggestions = []
+        if persona:
+            personalized_suggestions = persona_service.generate_personalized_suggestions(user_id)
+        
+        return render_template('persona_analyzer.html',
+                             persona=persona,
+                             personalized_suggestions=personalized_suggestions)
+        
+    except Exception as e:
+        logger.error(f"Error loading persona: {e}")
+        return render_template('persona_analyzer.html',
+                             persona=None,
+                             personalized_suggestions=[])
+
+@main.route('/template-gallery')
+def template_gallery():
+    """Template gallery page."""
+    try:
+        # Get trending templates
+        trending_templates = template_service.get_trending_templates(limit=20)
+        
+        # Search templates if query provided
+        search_query = request.args.get('search', '')
+        search_results = []
+        if search_query:
+            search_results = template_service.search_templates(search_query, limit=10)
+        
+        return render_template('template_gallery.html',
+                             trending_templates=trending_templates,
+                             search_results=search_results,
+                             search_query=search_query)
+        
+    except Exception as e:
+        logger.error(f"Error loading template gallery: {e}")
+        flash("Error loading templates. Please try again.", "error")
+        return render_template('template_gallery.html',
+                             trending_templates=[],
+                             search_results=[],
+                             search_query='')
+
+@main.route('/api/template-suggestions', methods=['POST'])
+def api_template_suggestions():
+    """API endpoint for getting template suggestions."""
+    try:
+        data = request.get_json()
+        template_name = data.get('template_name', '')
+        user_text = data.get('user_text', '')
+        
+        # Get template info
+        templates = template_service.search_templates(template_name, limit=1)
+        if not templates:
+            return jsonify({'error': 'Template not found'}), 404
+        
+        template_info = templates[0]
+        
+        # Generate suggestions
+        suggestions = template_service.suggest_captions_for_template(template_info, user_text)
+        
+        return jsonify({
+            'suggestions': suggestions,
+            'template_info': template_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting template suggestions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/trending-now')
+def api_trending_now():
+    """API endpoint for current trending topics."""
+    try:
+        trends = trend_service.get_trending_topics()
+        
+        # Filter for high meme potential
+        meme_worthy_trends = [t for t in trends if t.get('meme_potential', 0) > 0.5]
+        
+        return jsonify({
+            'trends': meme_worthy_trends[:10],
+            'last_updated': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting trending topics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/persona-update', methods=['POST'])
+def api_persona_update():
+    """API endpoint for updating user persona."""
+    try:
+        data = request.get_json()
+        user_id = session.get('user_id', 'anonymous')
+        
+        meme_data = data.get('meme_data', {})
+        interaction_type = data.get('interaction_type', 'created')
+        
+        # Update persona
+        updated_persona = persona_service.analyze_meme_interaction(user_id, meme_data, interaction_type)
+        
+        return jsonify({
+            'status': 'success',
+            'persona': updated_persona
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating persona: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @main.route('/chat', methods=['GET', 'POST'])
 def chat():
@@ -357,4 +610,238 @@ def api_chat():
 def clear_chat():
     """Clear the chat history."""
     session.pop('chat_history', None)
-    return redirect(url_for('main.chat')) 
+    return redirect(url_for('main.chat'))
+
+@main.route('/meme-generator', methods=['GET', 'POST'])
+def meme_generator():
+    """Meme generator page"""
+    form = MemeForm()
+    last_meme_url = None
+    
+    if form.validate_on_submit():
+        # Handle form submission similar to the index route
+        api_url = get_api_url()
+        
+        try:
+            # Prepare form data
+            form_data = {
+                'top_text': form.top_text.data or '',
+                'bottom_text': form.bottom_text.data or '',
+                'additional_text': form.additional_text.data or ''
+            }
+            
+            files = {}
+            if form.image.data:
+                files['image'] = (form.image.data.filename, form.image.data.stream, form.image.data.content_type)
+            
+            # Make request to API
+            response = requests.post(api_url, data=form_data, files=files, timeout=30)
+            
+            if response.status_code == 200:
+                # Handle the response based on content type
+                content_type = response.headers.get('Content-Type', '')
+                
+                if 'application/json' in content_type:
+                    # JSON response with meme URL
+                    data = response.json()
+                    last_meme_url = data.get('meme_url')
+                    
+                    # Store session data
+                    is_from_template = data.get('from_template', False)
+                    session['from_template'] = 'true' if is_from_template else 'false'
+                    session['similarity_score'] = data.get('similarity_score', 0)
+                    
+                elif 'image/' in content_type:
+                    # Direct image response - save and serve
+                    user_response_dir = Path(current_app.instance_path).parent / 'data' / 'user_response_meme'
+                    saved_image_path = save_image_from_response(response, user_response_dir)
+                    last_meme_url = url_for('serve_data_file', filename=f'user_response_meme/{saved_image_path.name}')
+                
+                if last_meme_url:
+                    flash('Meme generated successfully!', 'success')
+                else:
+                    flash('Failed to generate meme', 'error')
+            else:
+                flash(f'Error generating meme: {response.status_code}', 'error')
+                
+        except requests.RequestException as e:
+            flash(f'Error connecting to meme service: {str(e)}', 'error')
+        except Exception as e:
+            flash(f'Unexpected error: {str(e)}', 'error')
+    
+    return render_template('meme_generator.html', form=form, last_meme_url=last_meme_url)
+
+@main.route('/trendzombie')
+def trendzombie():
+    """TrendZombie - AI Meme Resurrector page."""
+    try:
+        # Get current trends
+        trends = trend_service.get_trending_topics(refresh=False)
+        
+        # Get resurrected memes based on trends
+        resurrected_memes = trendzombie_service.resurrect_memes_for_trends(trends, limit=6)
+        
+        # Get hall of fame
+        hall_of_fame = trendzombie_service.get_zombie_hall_of_fame(limit=5)
+        
+        # Get resurrection stats
+        stats = trendzombie_service.get_resurrection_stats()
+        
+        # Get available classic memes for custom resurrection
+        classic_memes = trendzombie_service.classic_memes
+        
+        logger.info(f"TrendZombie: Found {len(resurrected_memes)} resurrected memes")
+        
+        return render_template('trendzombie.html', 
+                             resurrected_memes=resurrected_memes,
+                             hall_of_fame=hall_of_fame,
+                             stats=stats,
+                             classic_memes=classic_memes)
+        
+    except Exception as e:
+        logger.error(f"Error in TrendZombie page: {e}")
+        return render_template('trendzombie.html', 
+                             resurrected_memes=[],
+                             hall_of_fame=[],
+                             stats={},
+                             classic_memes=[])
+
+@main.route('/api/resurrect-meme', methods=['POST'])
+def api_resurrect_meme():
+    """API endpoint to resurrect a specific meme with context."""
+    try:
+        data = request.get_json()
+        meme_name = data.get('meme_name')
+        context = data.get('context')
+        
+        if not meme_name or not context:
+            return jsonify({'error': 'Both meme_name and context are required'}), 400
+        
+        # Create a mock trend for the context
+        trend = {
+            'id': f'custom_{context.replace(" ", "_")}',
+            'name': context,
+            'source': 'custom',
+            'volume': 1000,
+            'url': '',
+            'timestamp': datetime.now().isoformat(),
+            'meme_potential': 0.8,
+            'description': f'Custom context: {context}'
+        }
+        
+        # Find the classic meme
+        classic_meme = None
+        for meme in trendzombie_service.classic_memes:
+            if meme['name'].lower() == meme_name.lower():
+                classic_meme = meme
+                break
+        
+        if not classic_meme:
+            return jsonify({'error': f'Classic meme "{meme_name}" not found'}), 404
+        
+        # Resurrect the meme
+        resurrection = trendzombie_service.resurrect_meme_for_trend(trend)
+        
+        if not resurrection:
+            return jsonify({'error': 'Failed to resurrect meme'}), 500
+        
+        return jsonify({
+            'success': True,
+            'resurrection': resurrection
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in resurrect meme API: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/trending-resurrections')
+def api_trending_resurrections():
+    """API endpoint to get trending meme resurrections."""
+    try:
+        # Get current trends
+        trends = trend_service.get_trending_topics(refresh=False)
+        
+        # Get resurrected memes
+        resurrected_memes = trendzombie_service.resurrect_memes_for_trends(trends, limit=10)
+        
+        return jsonify({
+            'success': True,
+            'resurrected_memes': resurrected_memes,
+            'total_count': len(resurrected_memes)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting trending resurrections: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/zombie-stats')
+def api_zombie_stats():
+    """API endpoint to get TrendZombie statistics."""
+    try:
+        stats = trendzombie_service.get_resurrection_stats()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Error getting zombie stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/analyze-persona', methods=['POST'])
+def api_analyze_persona():
+    """API endpoint to analyze user persona."""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', session.get('user_id', 'anonymous'))
+        meme_data = data.get('meme_data', {})
+        interaction_type = data.get('interaction_type', 'created')
+        
+        # Analyze the persona
+        persona = persona_service.analyze_meme_interaction(user_id, meme_data, interaction_type)
+        
+        return jsonify({
+            'success': True,
+            'persona': persona
+        })
+        
+    except Exception as e:
+        logger.error(f"Error analyzing persona: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/get-persona/<user_id>')
+def api_get_persona(user_id):
+    """API endpoint to get user persona."""
+    try:
+        persona = persona_service.get_user_persona(user_id)
+        
+        if not persona:
+            # Create a new persona
+            persona = persona_service.create_user_persona(user_id)
+        
+        return jsonify({
+            'success': True,
+            'persona': persona
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting persona: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@main.route('/api/persona-suggestions', methods=['POST'])
+def api_persona_suggestions():
+    """API endpoint to get personalized meme suggestions."""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', session.get('user_id', 'anonymous'))
+        context = data.get('context', '')
+        
+        suggestions = persona_service.generate_personalized_suggestions(user_id, context)
+        
+        return jsonify({
+            'success': True,
+            'suggestions': suggestions
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting persona suggestions: {e}")
+        return jsonify({'error': str(e)}), 500

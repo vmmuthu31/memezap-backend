@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}RoastMe AI - Get Savagely Roasted by AI{% endblock %}
+
+{% block content %}
+<div class="roast-page">
+    <!-- Hero Section -->
+    <div class="roast-hero">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h1 class="roast-title">
+                        <span class="title-icon">🔥</span>
+                        RoastMe AI
+                        <span class="title-subtitle">Get Savagely Roasted by AI</span>
+                    </h1>
+                    <p class="roast-description">
+                        Upload your photo and let our AI roast you with viral-worthy burns! 
+                        Choose your intensity level and prepare to get destroyed... in a fun way! 😈
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roast Generator -->
+    <div class="roast-generator">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="roast-card">
+                        <div class="card-header">
+                            <h3>🎯 Upload & Get Roasted</h3>
+                            <p>Upload your photo and choose your roast intensity</p>
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data" class="roast-form">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Image Upload -->
+                            <div class="upload-section">
+                                <div class="upload-area" id="uploadArea">
+                                    <div class="upload-icon">📸</div>
+                                    <h4>Drag & Drop Your Photo Here</h4>
+                                    <p>Or click to browse (JPG, PNG, GIF)</p>
+                                    {{ form.image(class="file-input", id="imageInput") }}
+                                </div>
+                                <div class="image-preview" id="imagePreview" style="display: none;">
+                                    <img id="previewImg" src="" alt="Preview">
+                                    <button type="button" class="btn-remove" onclick="removeImage()">❌</button>
+                                </div>
+                            </div>
+
+                            <!-- Roast Intensity -->
+                            <div class="intensity-section">
+                                <h4>🌶️ Choose Your Roast Intensity</h4>
+                                <div class="intensity-options">
+                                    <label class="intensity-option">
+                                        <input type="radio" name="roast_intensity" value="light" checked>
+                                        <div class="option-card light">
+                                            <div class="option-icon">😊</div>
+                                            <div class="option-title">Light Roast</div>
+                                            <div class="option-desc">Playful and gentle</div>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="intensity-option">
+                                        <input type="radio" name="roast_intensity" value="medium">
+                                        <div class="option-card medium">
+                                            <div class="option-icon">😏</div>
+                                            <div class="option-title">Medium Roast</div>
+                                            <div class="option-desc">Clever and witty</div>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="intensity-option">
+                                        <input type="radio" name="roast_intensity" value="savage">
+                                        <div class="option-card savage">
+                                            <div class="option-icon">😈</div>
+                                            <div class="option-title">Savage Roast</div>
+                                            <div class="option-desc">Brutally funny</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="submit-section">
+                                <button type="submit" class="btn-roast" id="roastBtn">
+                                    <span class="btn-icon">🔥</span>
+                                    Roast Me!
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roast Result -->
+    {% if roast_result %}
+    <div class="roast-result">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>🔥 AI Roast Results</h3>
+                            <div class="intensity-badge {{ roast_result.intensity }}">
+                                {{ roast_result.intensity|title }} Intensity
+                            </div>
+                        </div>
+                        
+                        <div class="roast-content">
+                            <div class="roast-text">
+                                <div class="roast-icon">💬</div>
+                                <p class="roast-quote">"{{ roast_result.roast }}"</p>
+                            </div>
+                            
+                            <div class="meme-suggestion">
+                                <h4>📱 Meme Template Suggestion</h4>
+                                <div class="template-info">
+                                    <div class="template-name">{{ roast_result.meme_template }}</div>
+                                    <div class="template-caption">{{ roast_result.meme_caption }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-actions">
+                            <button class="btn-action" onclick="shareRoast()">
+                                <span class="btn-icon">📤</span>
+                                Share Roast
+                            </button>
+                            <button class="btn-action" onclick="generateMeme()">
+                                <span class="btn-icon">🎭</span>
+                                Make Meme
+                            </button>
+                            <button class="btn-action" onclick="roastAgain()">
+                                <span class="btn-icon">🔄</span>
+                                Roast Again
+                            </button>
+                        </div>
+                        
+                        <div class="disclaimer">
+                            <p>{{ roast_result.disclaimer }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.roast-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
+    padding: 2rem 0;
+}
+
+.roast-hero {
+    text-align: center;
+    padding: 3rem 0;
+    color: white;
+}
+
+.roast-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.title-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.roast-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.upload-area {
+    border: 3px dashed #ff4757;
+    border-radius: 15px;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.file-input {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.intensity-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.intensity-option input {
+    display: none;
+}
+
+.option-card {
+    padding: 1.5rem;
+    border: 2px solid #ddd;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-roast {
+    background: linear-gradient(135deg, #ff4757, #ff3838);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block;
+    margin: 0 auto;
+    min-width: 200px;
+}
+
+.result-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.roast-text {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.btn-action {
+    background: #f8f9fa;
+    border: 2px solid #ff4757;
+    color: #ff4757;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    margin: 0.5rem;
+}
+</style>
+
+<script>
+function shareRoast() {
+    const roastText = document.querySelector('.roast-quote').textContent;
+    if (navigator.share) {
+        navigator.share({
+            title: 'I got roasted by AI!',
+            text: roastText,
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(roastText);
+        alert('Roast copied to clipboard!');
+    }
+}
+
+function generateMeme() {
+    const roastText = document.querySelector('.roast-quote').textContent;
+    window.location.href = '/?caption=' + encodeURIComponent(roastText);
+}
+
+function roastAgain() {
+    window.location.reload();
+}
+</script>
+{% endblock %}

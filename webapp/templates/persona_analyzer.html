@@ -1,0 +1,494 @@
+{% extends "base.html" %} {% block title %}Persona Analyzer - MemeOS{% endblock
+%} {% block content %}
+<div class="persona-page">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10 text-center">
+          <h1 class="persona-title">🧠 Memetic Digital Twin</h1>
+          <p class="persona-subtitle">
+            AI analyzes your meme interactions to create your unique humor
+            profile
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Persona Analysis Section -->
+  <div class="persona-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-header">
+            <h2>🎭 Your Meme Personality</h2>
+            <p>Based on your meme creation and interaction patterns</p>
+          </div>
+        </div>
+      </div>
+
+      {% if persona %}
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <div class="persona-card">
+            <div class="persona-header">
+              <div class="persona-avatar">
+                {% if persona.style_profile.humor_style == 'sarcastic' %} 😏 {%
+                elif persona.style_profile.humor_style == 'wholesome' %} 😊 {%
+                elif persona.style_profile.humor_style == 'dark' %} 😈 {% elif
+                persona.style_profile.humor_style == 'absurd' %} 🤪 {% else %}
+                🎭 {% endif %}
+              </div>
+              <div class="persona-info">
+                <h3>{{ persona.style_profile.humor_style.title() }} Humor</h3>
+                <p class="persona-description">
+                  {{ persona.style_profile.description }}
+                </p>
+              </div>
+            </div>
+
+            <div class="persona-stats">
+              <div class="stat-item">
+                <div class="stat-label">Memes Created</div>
+                <div class="stat-value">{{ persona.interaction_count }}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Confidence Score</div>
+                <div class="stat-value">
+                  {{ "%.1f"|format(persona.confidence_score * 100) }}%
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Learning Status</div>
+                <div class="stat-value">
+                  {{ "Active" if persona.confidence_score > 0.7 else "Learning"
+                  }}
+                </div>
+              </div>
+            </div>
+
+            <div class="persona-details">
+              <h4>🎯 Preferred Templates</h4>
+              <div class="template-preferences">
+                {% for template in persona.preferred_templates[:5] %}
+                <span class="template-tag">{{ template }}</span>
+                {% endfor %}
+              </div>
+
+              <h4>🏷️ Common Themes</h4>
+              <div class="theme-tags">
+                {% for theme in persona.common_themes[:8] %}
+                <span class="theme-tag">{{ theme }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <div class="no-persona-card">
+            <div class="no-persona-icon">🤖</div>
+            <h3>Building Your Digital Twin</h3>
+            <p>
+              Create a few memes to let our AI learn your unique humor style!
+            </p>
+            <a
+              href="{{ url_for('main.meme_generator') }}"
+              class="btn btn-create-meme"
+              >Create Your First Meme</a
+            >
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Personalized Suggestions Section -->
+  {% if personalized_suggestions %}
+  <div class="suggestions-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-header">
+            <h2>🎯 Personalized for You</h2>
+            <p>AI-generated memes that match your humor style</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        {% for suggestion in personalized_suggestions %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="suggestion-card">
+            <div class="suggestion-header">
+              <h4>{{ suggestion.template or 'Custom Format' }}</h4>
+              <span class="confidence-badge"
+                >{{ "%.0f"|format(suggestion.confidence * 100) }}% Match</span
+              >
+            </div>
+            <div class="suggestion-content">
+              <p class="suggestion-text">"{{ suggestion.text }}"</p>
+              <p class="suggestion-reason">{{ suggestion.reason }}</p>
+            </div>
+            <div class="suggestion-actions">
+              <a
+                href="{{ url_for('main.meme_generator') }}?template={{ suggestion.template }}&caption={{ suggestion.text }}"
+                class="btn btn-create"
+                >Create This Meme</a
+              >
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- How It Works -->
+  <div class="how-it-works">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12 text-center">
+          <h3>How Your Digital Twin Works</h3>
+          <div class="steps">
+            <div class="step">
+              <div class="step-icon">📊</div>
+              <h4>1. Analyze Patterns</h4>
+              <p>AI studies your meme creation patterns and preferences</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🧠</div>
+              <h4>2. Learn Your Style</h4>
+              <p>Machine learning identifies your unique humor signature</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🎯</div>
+              <h4>3. Personalize Content</h4>
+              <p>Generates custom memes that match your exact style</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .persona-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    color: white;
+  }
+
+  .hero-section {
+    padding: 6rem 0 4rem;
+    text-align: center;
+  }
+
+  .persona-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .persona-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .persona-section {
+    padding: 3rem 0;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-header p {
+    font-size: 1.1rem;
+    opacity: 0.8;
+  }
+
+  .persona-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    color: #333;
+  }
+
+  .persona-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .persona-avatar {
+    font-size: 4rem;
+    margin-right: 2rem;
+    background: linear-gradient(45deg, #764ba2, #667eea);
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .persona-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    color: #333;
+  }
+
+  .persona-description {
+    color: #666;
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .persona-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #764ba2;
+  }
+
+  .persona-details h4 {
+    color: #333;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+  }
+
+  .template-preferences,
+  .theme-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .template-tag,
+  .theme-tag {
+    background: linear-gradient(45deg, #764ba2, #667eea);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .theme-tag {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+  }
+
+  .no-persona-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 4rem 2rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .no-persona-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .no-persona-card h3 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+
+  .btn-create-meme {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-top: 1rem;
+  }
+
+  .btn-create-meme:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+
+  .suggestions-section {
+    padding: 4rem 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .suggestion-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    height: 100%;
+    transition: transform 0.3s ease;
+    color: #333;
+  }
+
+  .suggestion-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .suggestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .suggestion-header h4 {
+    color: #333;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  .confidence-badge {
+    background: linear-gradient(45deg, #764ba2, #667eea);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .suggestion-content {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .suggestion-text {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .suggestion-reason {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .btn-create {
+    background: linear-gradient(45deg, #764ba2, #667eea);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  .btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+
+  .how-it-works {
+    padding: 4rem 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .how-it-works h3 {
+    color: white;
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+
+  .step {
+    text-align: center;
+    color: white;
+  }
+
+  .step-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .step h4 {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .persona-title {
+      font-size: 2.5rem;
+    }
+
+    .persona-header {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .persona-avatar {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+
+    .persona-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .suggestion-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}

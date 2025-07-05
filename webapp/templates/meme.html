@@ -1,0 +1,904 @@
+{% extends "base.html" %} {% block title %}MemeOS - The Ultimate Meme Operating
+System{% endblock %} {% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center mb-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="hero-content">
+        <div class="meme-crown mb-3">
+          <i class="fas fa-desktop"></i>
+        </div>
+        <h1 class="hero-title mb-4">
+          <span class="glitch-text" data-text="WELCOME TO">WELCOME TO</span
+          ><br />
+          <span class="meme-lord-text"
+            >MEME<span class="os-accent">OS</span></span
+          >
+        </h1>
+        <p class="hero-subtitle mb-4">
+          The world's first <span class="highlight">MEME OPERATING SYSTEM</span
+          ><br />
+          Where every pixel understands the assignment 🔥
+        </p>
+
+        <!-- Meme Stats Counter -->
+        <div class="meme-stats d-flex justify-content-center mb-4">
+          <div class="stat-item me-4">
+            <div class="stat-number">1,337,420</div>
+            <div class="stat-label">Memes Processed</div>
+          </div>
+          <div class="stat-item me-4">
+            <div class="stat-number">∞</div>
+            <div class="stat-label">Laughs/Second</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">420.69</div>
+            <div class="stat-label">Gigachad Score</div>
+          </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="cta-buttons mb-4">
+          <button
+            class="btn btn-meme-primary me-3"
+            onclick="scrollToMemeGenerator()"
+          >
+            <i class="fas fa-rocket me-2"></i>BOOT MEME OS
+          </button>
+          <button class="btn btn-meme-secondary" onclick="showExamples()">
+            <i class="fas fa-fire me-2"></i>VIEW DEMOS
+          </button>
+        </div>
+
+        <!-- Floating Meme Examples -->
+        <div class="floating-memes">
+          <div class="floating-meme meme-1">🔥</div>
+          <div class="floating-meme meme-2">💀</div>
+          <div class="floating-meme meme-3">😭</div>
+          <div class="floating-meme meme-4">💯</div>
+          <div class="floating-meme meme-5">🗿</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features Grid -->
+<div class="features-grid mb-5">
+  <div class="row">
+    <div class="col-md-4 mb-4">
+      <div class="feature-card">
+        <div class="feature-icon">�</div>
+        <h3>Neural Meme Engine</h3>
+        <p>
+          Advanced AI that speaks fluent internet. No dead memes here, chief.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Quantum Speed</h3>
+        <p>
+          From normie pic to viral gold in 2.69 seconds. Physics hate this
+          trick.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>Context Awareness 3.0</h3>
+        <p>
+          Reads the room better than you do. Creates memes that actually hit
+          different.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if last_meme_url %}
+<div class="row mb-5" id="meme-result">
+  <div class="col-md-10 offset-md-1">
+    <div class="card glow-card">
+      <div
+        class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+      >
+        <h2 class="card-title h5 mb-0">
+          <i class="fas fa-grin-tears me-2"></i>Your Generated Meme
+        </h2>
+      </div>
+      <div class="card-body text-center position-relative p-0">
+        <img
+          src="{{ last_meme_url }}"
+          alt="Generated Meme"
+          class="img-fluid shadow"
+          style="max-height: 500px; cursor: pointer"
+        />
+        {% if session.get('from_template') == 'true' %}
+        <div class="template-indicator from-template">
+          <i class="fas fa-check-circle me-1"></i>Generated from meme template
+          ({{ "%.1f"|format(session.get('similarity_score', 0)) }}%)
+        </div>
+        {% else %}
+        <div class="template-indicator no-template">
+          <i class="fas fa-image me-1"></i>Generated from original image
+        </div>
+        {% endif %}
+        <div class="p-3 d-flex justify-content-center">
+          <a
+            href="{{ last_meme_url }}"
+            class="btn btn-primary me-2"
+            target="_blank"
+          >
+            <i class="fas fa-external-link-alt me-1"></i> View Full Size
+          </a>
+          <a
+            href="{{ last_meme_url }}"
+            class="btn btn-outline-primary"
+            download="meme.jpg"
+          >
+            <i class="fas fa-download me-1"></i> Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="card-title h5 mb-0">
+          <i class="fas fa-terminal me-2"></i>MemeOS Terminal
+        </h2>
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+          {{ form.csrf_token }}
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="fas fa-upload me-2"></i>{{ form.image.label.text }}
+            </label>
+            <div class="input-wrapper">
+              {{ form.image(class="form-control") }}
+              <div class="input-icon">
+                <i class="fas fa-image"></i>
+              </div>
+            </div>
+            {% if form.image.errors %}
+            <div class="alert alert-danger mt-2">
+              {% for error in form.image.errors %} {{ error }} {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-arrow-up me-2"></i>{{
+                  form.top_text.label.text }}
+                </label>
+                <div class="input-wrapper">
+                  {{ form.top_text(class="form-control", placeholder="Text at
+                  the top") }}
+                  <div class="input-icon">
+                    <i class="fas fa-font"></i>
+                  </div>
+                </div>
+                {% if form.top_text.errors %}
+                <div class="alert alert-danger mt-2">
+                  {% for error in form.top_text.errors %} {{ error }} {% endfor
+                  %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-arrow-down me-2"></i>{{
+                  form.bottom_text.label.text }}
+                </label>
+                <div class="input-wrapper">
+                  {{ form.bottom_text(class="form-control", placeholder="Text at
+                  the bottom") }}
+                  <div class="input-icon">
+                    <i class="fas fa-font"></i>
+                  </div>
+                </div>
+                {% if form.bottom_text.errors %}
+                <div class="alert alert-danger mt-2">
+                  {% for error in form.bottom_text.errors %} {{ error }} {%
+                  endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="fas fa-align-left me-2"></i>{{
+              form.additional_text.label.text }}
+            </label>
+            <div class="input-wrapper">
+              {{ form.additional_text(class="form-control", rows=2,
+              placeholder="Add more text separated by | character") }}
+              <div class="input-icon">
+                <i class="fas fa-paragraph"></i>
+              </div>
+            </div>
+            <div class="form-text">{{ form.additional_text.description }}</div>
+            {% if form.additional_text.errors %}
+            <div class="alert alert-danger mt-2">
+              {% for error in form.additional_text.errors %} {{ error }} {%
+              endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="d-grid">
+            {{ form.submit(class="btn btn-primary btn-lg fw-bold") }}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MemeOS System Status -->
+<div class="row mb-5">
+  <div class="col-12">
+    <div class="system-status-card">
+      <div class="system-header">
+        <h3><i class="fas fa-microchip me-2"></i>MemeOS System Status</h3>
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>All Systems Operational</span>
+        </div>
+      </div>
+      <div class="system-grid">
+        <div class="system-module">
+          <div class="module-name">Neural.exe</div>
+          <div class="module-status">ONLINE</div>
+          <div class="module-description">AI Meme Processing Unit</div>
+        </div>
+        <div class="system-module">
+          <div class="module-name">Vision.dll</div>
+          <div class="module-status">ACTIVE</div>
+          <div class="module-description">Image Analysis Engine</div>
+        </div>
+        <div class="system-module">
+          <div class="module-name">Context.sys</div>
+          <div class="module-status">RUNNING</div>
+          <div class="module-description">Meme Context Processor</div>
+        </div>
+        <div class="system-module">
+          <div class="module-name">Viral.bin</div>
+          <div class="module-status">READY</div>
+          <div class="module-description">Virality Optimizer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-8 offset-md-2">
+    <div class="card card-coming-soon">
+      <div class="card-header bg-secondary text-white">
+        <h2 class="card-title h5 mb-0">
+          <i class="fas fa-comments me-2"></i>MemeOS Chat Interface
+        </h2>
+      </div>
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <p class="mb-1">
+              Natural language meme generation is loading into MemeOS kernel...
+            </p>
+            <p class="text-muted mb-0">
+              <small
+                >Soon you'll chat with our AI to create the dankest memes
+                through conversation.</small
+              >
+            </p>
+          </div>
+          <div class="ms-3">
+            <span class="badge bg-warning text-dark px-3 py-2 pulse-badge"
+              >v2.0 Coming</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  .os-accent {
+    color: #00ff41;
+    text-shadow: 0 0 10px #00ff41;
+    font-weight: 700;
+  }
+
+  .hero-title {
+    font-family: "Courier New", monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .meme-lord-text {
+    font-size: 4rem;
+    background: linear-gradient(
+      45deg,
+      #ff6b6b,
+      #4ecdc4,
+      #45b7d1,
+      #96ceb4,
+      #feca57
+    );
+    background-size: 400% 400%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 3s ease-in-out infinite;
+  }
+
+  @keyframes gradientShift {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .feature-card {
+    background: rgba(26, 26, 36, 0.8);
+    border: 1px solid rgba(111, 66, 193, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(111, 66, 193, 0.1),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  .feature-card:hover::before {
+    left: 100%;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px);
+    border-color: rgba(111, 66, 193, 0.6);
+    box-shadow: 0 20px 40px rgba(111, 66, 193, 0.2);
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 10px rgba(111, 66, 193, 0.5));
+  }
+
+  .floating-memes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .floating-meme {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0.7;
+    animation: floatAround 10s infinite linear;
+  }
+
+  .floating-meme:nth-child(1) {
+    left: 10%;
+    animation-delay: 0s;
+  }
+  .floating-meme:nth-child(2) {
+    left: 20%;
+    animation-delay: 2s;
+  }
+  .floating-meme:nth-child(3) {
+    left: 80%;
+    animation-delay: 4s;
+  }
+  .floating-meme:nth-child(4) {
+    left: 70%;
+    animation-delay: 6s;
+  }
+  .floating-meme:nth-child(5) {
+    left: 90%;
+    animation-delay: 8s;
+  }
+
+  @keyframes floatAround {
+    0% {
+      transform: translateY(100vh) rotate(0deg);
+    }
+    100% {
+      transform: translateY(-100px) rotate(360deg);
+    }
+  }
+
+  .btn-meme-primary {
+    background: linear-gradient(45deg, #6f42c1, #8250df);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    font-weight: bold;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-meme-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(111, 66, 193, 0.4);
+    background: linear-gradient(45deg, #8250df, #6f42c1);
+  }
+
+  .btn-meme-secondary {
+    background: transparent;
+    border: 2px solid #00ff41;
+    color: #00ff41;
+    padding: 12px 30px;
+    font-weight: bold;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-meme-secondary:hover {
+    background: #00ff41;
+    color: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 255, 65, 0.4);
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #00ff41;
+    text-shadow: 0 0 10px #00ff41;
+    font-family: "Courier New", monospace;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hero-section {
+    position: relative;
+    padding: 4rem 0;
+    overflow: hidden;
+  }
+
+  .card-coming-soon {
+    border-color: var(--secondary-accent);
+  }
+
+  .pulse-badge {
+    animation: pulse 2s infinite;
+  }
+
+  .text-gradient {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b, #7f7fd5, #6f42c1);
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientBg 10s ease infinite;
+  }
+
+  .funky-badge {
+    display: inline-block;
+    padding: 8px 15px;
+    background: rgba(111, 66, 193, 0.15);
+    color: var(--text-color);
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+  }
+
+  .funky-badge:hover {
+    transform: translateY(-3px);
+    background: rgba(111, 66, 193, 0.25);
+  }
+
+  .input-wrapper {
+    position: relative;
+  }
+
+  .input-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  textarea + .input-icon {
+    top: 25px;
+  }
+
+  .glow-card {
+    animation: card-glow 4s infinite alternate;
+  }
+
+  @keyframes card-glow {
+    0% {
+      box-shadow: 0 8px 20px rgba(111, 66, 193, 0.2);
+    }
+    100% {
+      box-shadow: 0 8px 30px rgba(111, 66, 193, 0.5);
+    }
+  }
+
+  /* Terminal-style form styling */
+  .card-header {
+    background: linear-gradient(45deg, #1a1a24, #252533) !important;
+    border-bottom: 2px solid #00ff41;
+  }
+
+  .form-control {
+    background-color: #1a1a24;
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+  }
+
+  .form-control:focus {
+    background-color: #1a1a24;
+    border-color: #00ff41;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+  }
+
+  .form-label {
+    color: #00ff41;
+    font-family: "Courier New", monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* MemeOS System Status Styling */
+  .system-status-card {
+    background: rgba(26, 26, 36, 0.9);
+    border: 2px solid #00ff41;
+    border-radius: 15px;
+    padding: 2rem;
+    font-family: "Courier New", monospace;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  }
+
+  .system-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+    padding-bottom: 1rem;
+  }
+
+  .system-header h3 {
+    color: #00ff41;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    color: #00ff41;
+    font-weight: bold;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    background: #00ff41;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px #00ff41;
+  }
+
+  .system-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .system-module {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 65, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .system-module:hover {
+    border-color: #00ff41;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .module-name {
+    color: #00ff41;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .module-status {
+    color: #00ff41;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    animation: blink 2s infinite;
+  }
+
+  .module-description {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: Arial, sans-serif;
+  }
+
+  @keyframes blink {
+    0%,
+    50% {
+      opacity: 1;
+    }
+    51%,
+    100% {
+      opacity: 0.5;
+    }
+  }
+
+  /* System status styles */
+  .system-status-card {
+    background: rgba(26, 26, 36, 0.9);
+    border: 1px solid rgba(111, 66, 193, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .system-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #00ff41;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: #00ff41;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+
+  .system-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .system-module {
+    background: rgba(111, 66, 193, 0.1);
+    border: 1px solid rgba(111, 66, 193, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  .system-module:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(111, 66, 193, 0.2);
+  }
+
+  .module-name {
+    font-weight: 700;
+    color: #00ff41;
+    margin-bottom: 0.5rem;
+  }
+
+  .module-status {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .module-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.8;
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // MemeOS Boot Sequence
+    setTimeout(() => {
+      const bootMessages = [
+        "Initializing MemeOS kernel...",
+        "Loading neural networks...",
+        "Calibrating humor sensors...",
+        "Connecting to the memeverse...",
+        "System ready. Welcome to MemeOS!",
+      ];
+
+      let messageIndex = 0;
+      const statusElement = document.querySelector(
+        ".status-indicator span:last-child"
+      );
+
+      function showBootMessage() {
+        if (messageIndex < bootMessages.length) {
+          if (statusElement) {
+            statusElement.textContent = bootMessages[messageIndex];
+          }
+          messageIndex++;
+          setTimeout(showBootMessage, 800);
+        } else {
+          if (statusElement) {
+            statusElement.textContent = "All Systems Operational";
+          }
+        }
+      }
+
+      showBootMessage();
+    }, 1000);
+
+    // Terminal typing effect for the header
+    const terminalHeader = document.querySelector(".card-header h2");
+    if (terminalHeader) {
+      let text = terminalHeader.innerHTML;
+      terminalHeader.innerHTML = "";
+      let i = 0;
+      function typeWriter() {
+        if (i < text.length) {
+          terminalHeader.innerHTML += text.charAt(i);
+          i++;
+          setTimeout(typeWriter, 50);
+        }
+      }
+      setTimeout(typeWriter, 3000);
+    }
+
+    // Add matrix-style falling characters effect
+    createMatrixEffect();
+  });
+
+  function scrollToMemeGenerator() {
+    const memeForm = document.querySelector(".card");
+    if (memeForm) {
+      memeForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      // Add a glow effect
+      memeForm.style.boxShadow = "0 0 30px rgba(0, 255, 65, 0.5)";
+      setTimeout(() => {
+        memeForm.style.boxShadow = "";
+      }, 2000);
+    }
+  }
+
+  function showExamples() {
+    // Create a terminal-style demo
+    const examples = [
+      "> ls /memeOS/templates/",
+      "  drake_pointing.exe",
+      "  distracted_boyfriend.dll",
+      "  woman_yelling_cat.sys",
+      "  this_is_fine.bin",
+      "  chad_virgin.lib",
+      "",
+      "> ./deploy_memes.sh",
+      "Deploying viral content...",
+      "Success: 100% dank memes ready! 🚀",
+      "",
+      "Press OK to return to MemeOS terminal",
+    ];
+
+    alert(examples.join("\n"));
+  }
+
+  function createMatrixEffect() {
+    // Create subtle matrix effect in background
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.zIndex = "-2";
+    canvas.style.opacity = "0.1";
+    canvas.style.pointerEvents = "none";
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const chars = "01";
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+
+    const drops = [];
+    for (let x = 0; x < columns; x++) {
+      drops[x] = 1;
+    }
+
+    function draw() {
+      ctx.fillStyle = "rgba(14, 14, 19, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#00ff41";
+      ctx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+
+    setInterval(draw, 33);
+  }
+</script>
+{% endblock %}

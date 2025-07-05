@@ -1,82 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MemeZap Options</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    h1 {
-      color: #1DA1F2;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-    .form-group {
-      margin-bottom: 16px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    button {
-      background-color: #1DA1F2;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    button:hover {
-      background-color: #0c8ad6;
-    }
-    .status {
-      margin-top: 16px;
-      padding: 8px;
-      border-radius: 4px;
-      display: none;
-    }
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-      display: block;
-    }
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <h1>MemeZap Extension Options</h1>
-  
-  <div class="form-group">
-    <label for="apiUrl">Meme Generator API URL:</label>
-    <input type="text" id="apiUrl" placeholder="http://localhost:8000/api/generate">
-    <small>This is the URL endpoint where your meme generator API is hosted.</small>
-  </div>
-  
-  <button id="saveButton">Save Settings</button>
-  
-  <div id="status" class="status"></div>
-  
-  <script src="options.js"></script>
-</body>
-</html> 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MemeOS Options</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #1da1f2;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      button {
+        background-color: #1da1f2;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      button:hover {
+        background-color: #0c8ad6;
+      }
+      .status {
+        margin-top: 16px;
+        padding: 8px;
+        border-radius: 4px;
+        display: none;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>MemeOS Extension Options</h1>
+
+    <div class="form-group">
+      <label for="apiUrl">Meme Generator API URL:</label>
+      <input
+        type="text"
+        id="apiUrl"
+        placeholder="http://localhost:8000/api/generate"
+      />
+      <small
+        >This is the URL endpoint where your meme generator API is
+        hosted.</small
+      >
+    </div>
+
+    <button id="saveButton">Save Settings</button>
+
+    <div id="status" class="status"></div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

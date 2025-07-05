@@ -104,10 +104,17 @@ def configure_routes(app):
                 save_dir = Path(__file__).parent.parent / "data" / "user_query_meme"
                 save_dir.mkdir(parents=True, exist_ok=True)
                 
-                # Generate timestamp filename
+                # Generate timestamp filename with proper extension
                 timestamp = str(int(time.time()))
                 filename = secure_filename(file.filename)
-                save_path = save_dir / f"{timestamp}_{filename}"
+                # Ensure proper extension
+                ext = os.path.splitext(filename)[1].lower()
+                if not ext:
+                    ext = '.jpg'  # Default to jpg if no extension
+                elif ext not in ['.jpg', '.jpeg', '.png']:
+                    ext = '.jpg'  # Convert unsupported formats to jpg
+                
+                save_path = save_dir / f"{timestamp}{ext}"
                 
                 # Save the uploaded file
                 file.save(save_path)
@@ -136,8 +143,10 @@ def configure_routes(app):
             response_dir = Path(__file__).parent.parent / "data" / "user_response_meme"
             response_dir.mkdir(parents=True, exist_ok=True)
             
-            # Copy the generated meme to user_response_meme directory
+            # Copy the generated meme to user_response_meme directory with proper extension
             output_filename = f"response_{os.path.basename(image_path)}"
+            if not output_filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                output_filename += '.jpg'
             output_path = str(response_dir / output_filename)
             
             # Copy the file

@@ -1,0 +1,567 @@
+{% extends "base.html" %} {% block title %}Template Gallery - MemeOS{% endblock
+%} {% block content %}
+<div class="template-gallery-page">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10 text-center">
+          <h1 class="gallery-title">🎭 Template Gallery</h1>
+          <p class="gallery-subtitle">
+            Discover and use AI-powered meme templates from our extensive
+            collection
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="search-card">
+            <form method="GET" action="{{ url_for('main.template_gallery') }}">
+              <div class="search-input-group">
+                <input
+                  type="text"
+                  name="search"
+                  class="search-input"
+                  placeholder="Search templates (e.g., 'Drake pointing', 'Distracted boyfriend')..."
+                  value="{{ search_query or '' }}"
+                />
+                <button type="submit" class="search-btn">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Results Section -->
+  {% if search_query %}
+  <div class="results-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-header">
+            <h2>🔍 Search Results for "{{ search_query }}"</h2>
+            <p>{{ search_results|length }} template(s) found</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        {% for template in search_results %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="template-card">
+            <div class="template-image">
+              <img
+                src="{{ template.url }}"
+                alt="{{ template.name }}"
+                loading="lazy"
+              />
+            </div>
+            <div class="template-info">
+              <h4>{{ template.name }}</h4>
+              <p class="template-description">
+                {{ template.description or 'Popular meme template' }}
+              </p>
+              <div class="template-meta">
+                <span class="template-uses"
+                  >{{ template.box_count }} text boxes</span
+                >
+                <span class="template-id">ID: {{ template.id }}</span>
+              </div>
+            </div>
+            <div class="template-actions">
+              <a
+                href="{{ url_for('main.meme_generator') }}?template_id={{ template.id }}&template_name={{ template.name }}"
+                class="btn btn-use-template"
+                >Use This Template</a
+              >
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% if not search_results %}
+        <div class="col-lg-12 text-center">
+          <div class="no-results">
+            <h3>🤔 No templates found</h3>
+            <p>
+              Try searching for popular templates like "Drake", "Distracted
+              boyfriend", or "Woman yelling at cat"
+            </p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Trending Templates Section -->
+  <div class="trending-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-header">
+            <h2>🔥 Trending Templates</h2>
+            <p>Most popular meme templates right now</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        {% for template in trending_templates %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="template-card trending">
+            <div class="trending-badge">🔥 Trending</div>
+            <div class="template-image">
+              <img
+                src="{{ template.url }}"
+                alt="{{ template.name }}"
+                loading="lazy"
+              />
+            </div>
+            <div class="template-info">
+              <h4>{{ template.name }}</h4>
+              <p class="template-description">
+                {{ template.description or 'Popular meme template' }}
+              </p>
+              <div class="template-meta">
+                <span class="template-uses"
+                  >{{ template.box_count }} text boxes</span
+                >
+                <span class="template-popularity"
+                  >{{ template.popularity or 'High' }} popularity</span
+                >
+              </div>
+            </div>
+            <div class="template-actions">
+              <a
+                href="{{ url_for('main.meme_generator') }}?template_id={{ template.id }}&template_name={{ template.name }}"
+                class="btn btn-use-template"
+                >Use This Template</a
+              >
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% if not trending_templates %}
+        <div class="col-lg-12 text-center">
+          <div class="no-content">
+            <h3>🤖 Loading trending templates...</h3>
+            <p>
+              Our AI is analyzing the latest trends. Check back in a moment!
+            </p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Popular Categories -->
+  <div class="categories-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="section-header">
+            <h2>📂 Popular Categories</h2>
+            <p>Browse templates by category</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+          <div class="category-card">
+            <div class="category-icon">😂</div>
+            <h4>Reaction Memes</h4>
+            <p>Express your feelings with these popular reaction templates</p>
+            <a
+              href="{{ url_for('main.template_gallery') }}?search=reaction"
+              class="btn btn-category"
+              >Browse</a
+            >
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+          <div class="category-card">
+            <div class="category-icon">💭</div>
+            <h4>Thinking Memes</h4>
+            <p>Share your thoughts with contemplative templates</p>
+            <a
+              href="{{ url_for('main.template_gallery') }}?search=thinking"
+              class="btn btn-category"
+              >Browse</a
+            >
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+          <div class="category-card">
+            <div class="category-icon">🎯</div>
+            <h4>Comparison Memes</h4>
+            <p>Compare two things with these popular formats</p>
+            <a
+              href="{{ url_for('main.template_gallery') }}?search=comparison"
+              class="btn btn-category"
+              >Browse</a
+            >
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+          <div class="category-card">
+            <div class="category-icon">🔥</div>
+            <h4>Viral Classics</h4>
+            <p>Timeless templates that never go out of style</p>
+            <a
+              href="{{ url_for('main.template_gallery') }}?search=classic"
+              class="btn btn-category"
+              >Browse</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <div class="how-it-works">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12 text-center">
+          <h3>How Template Gallery Works</h3>
+          <div class="steps">
+            <div class="step">
+              <div class="step-icon">🔍</div>
+              <h4>1. Browse & Search</h4>
+              <p>Find the perfect template from our curated collection</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🎨</div>
+              <h4>2. Customize</h4>
+              <p>Add your own text and make it uniquely yours</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🚀</div>
+              <h4>3. Share</h4>
+              <p>Download and share your meme with the world</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .template-gallery-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .hero-section {
+    padding: 6rem 0 4rem;
+    text-align: center;
+  }
+
+  .gallery-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .gallery-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .search-section {
+    padding: 2rem 0;
+  }
+
+  .search-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .search-input-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .search-btn {
+    padding: 1rem 2rem;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .results-section,
+  .trending-section {
+    padding: 3rem 0;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-header p {
+    font-size: 1.1rem;
+    opacity: 0.8;
+  }
+
+  .template-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    height: 100%;
+    transition: transform 0.3s ease;
+    color: #333;
+    position: relative;
+  }
+
+  .template-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .template-card.trending {
+    border: 2px solid #ff6b6b;
+  }
+
+  .trending-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(45deg, #ff6b6b, #ffa500);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    z-index: 2;
+  }
+
+  .template-image {
+    width: 100%;
+    height: 200px;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: #f0f0f0;
+  }
+
+  .template-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 15px;
+  }
+
+  .template-info h4 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+  }
+
+  .template-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .template-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: #999;
+  }
+
+  .btn-use-template {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: block;
+    text-align: center;
+  }
+
+  .btn-use-template:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+
+  .no-results,
+  .no-content {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4rem 2rem;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+  }
+
+  .no-results h3,
+  .no-content h3 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+
+  .categories-section {
+    padding: 4rem 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .category-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    transition: transform 0.3s ease;
+    color: #333;
+  }
+
+  .category-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .category-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .category-card h4 {
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .category-card p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-category {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  .btn-category:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+
+  .how-it-works {
+    padding: 4rem 0;
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .how-it-works h3 {
+    color: white;
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+
+  .step {
+    text-align: center;
+    color: white;
+  }
+
+  .step-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .step h4 {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .gallery-title {
+      font-size: 2.5rem;
+    }
+
+    .search-input-group {
+      flex-direction: column;
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
+    .template-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}

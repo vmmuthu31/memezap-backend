@@ -90,7 +90,7 @@ class TwitterNotificationService:
         try:
             # Create a prompt for OpenAI to generate an engaging promotional tweet
             prompt = f"""
-            Create an engaging, fun promotional tweet for our meme generation platform called MemeZap. 
+            Create an engaging, fun promotional tweet for our meme generation platform called MemeOS. 
             
             Context:
             - Someone just used our AI-powered meme generator
